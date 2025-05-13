@@ -1,0 +1,811 @@
+# Tailwind CSS Reference Guide
+
+This guide provides a reference for key Tailwind CSS concepts and patterns that we'll use in the Brain Log App.
+
+## Utility-First Approach
+
+Tailwind CSS is a utility-first CSS framework. Instead of writing custom CSS, you apply pre-defined utility classes directly in your HTML/JSX.
+
+### Traditional CSS vs Tailwind CSS
+
+**Traditional CSS:**
+```css
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.btn:hover {
+  background-color: #2563eb;
+}
+```
+
+**Tailwind CSS:**
+```jsx
+<button className="inline-block px-4 py-2 bg-blue-500 text-white rounded font-semibold hover:bg-blue-600">
+  Button
+</button>
+```
+
+## Core Concepts
+
+### Responsive Design
+
+Tailwind uses a mobile-first approach with breakpoint prefixes:
+
+- `sm`: 640px and up
+- `md`: 768px and up
+- `lg`: 1024px and up
+- `xl`: 1280px and up
+- `2xl`: 1536px and up
+
+Example:
+```jsx
+<div className="w-full md:w-1/2 lg:w-1/3">
+  {/* Full width on mobile, half width on medium screens, one-third on large screens */}
+</div>
+```
+
+### Hover, Focus, and Other States
+
+Tailwind provides state variants using prefixes:
+
+```jsx
+<button className="bg-blue-500 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+  Button
+</button>
+```
+
+Common state variants:
+- `hover:`: Styles applied on hover
+- `focus:`: Styles applied on focus
+- `active:`: Styles applied on active
+- `disabled:`: Styles applied when disabled
+- `group-hover:`: Styles applied when a parent with the `group` class is hovered
+
+### Dark Mode
+
+Tailwind supports dark mode with the `dark:` prefix:
+
+```jsx
+<div className="bg-white text-black dark:bg-gray-800 dark:text-white">
+  {/* Light mode: white background, black text */}
+  {/* Dark mode: dark gray background, white text */}
+</div>
+```
+
+To enable dark mode, add the following to your `tailwind.config.js`:
+
+```js
+module.exports = {
+  darkMode: 'class', // or 'media' for system preference
+  // ...
+}
+```
+
+With `'class'` mode, you need to add the `dark` class to the `html` or a parent element:
+
+```jsx
+// For manual toggle
+<html className={isDarkMode ? 'dark' : ''}>
+```
+
+## Layout Utilities
+
+### Container
+
+The `container` class sets the max-width of an element to match the min-width of the current breakpoint:
+
+```jsx
+<div className="container mx-auto px-4">
+  {/* Content */}
+</div>
+```
+
+### Display
+
+Control the display type of an element:
+
+```jsx
+<div className="block">Block</div>
+<div className="inline">Inline</div>
+<div className="inline-block">Inline Block</div>
+<div className="flex">Flex</div>
+<div className="grid">Grid</div>
+<div className="hidden">Hidden</div>
+```
+
+### Flexbox
+
+Flexbox utilities for layout:
+
+```jsx
+<div className="flex flex-row justify-between items-center">
+  <div>Item 1</div>
+  <div>Item 2</div>
+  <div>Item 3</div>
+</div>
+```
+
+Common flexbox utilities:
+- `flex`: Display as flex
+- `flex-row`, `flex-col`: Direction
+- `flex-wrap`, `flex-nowrap`: Wrapping
+- `justify-start`, `justify-center`, `justify-end`, `justify-between`, `justify-around`, `justify-evenly`: Horizontal alignment
+- `items-start`, `items-center`, `items-end`, `items-baseline`, `items-stretch`: Vertical alignment
+- `flex-1`, `flex-auto`, `flex-initial`, `flex-none`: Flex grow/shrink
+
+### Grid
+
+Grid utilities for layout:
+
+```jsx
+<div className="grid grid-cols-3 gap-4">
+  <div>Item 1</div>
+  <div>Item 2</div>
+  <div>Item 3</div>
+  <div>Item 4</div>
+  <div>Item 5</div>
+  <div>Item 6</div>
+</div>
+```
+
+Common grid utilities:
+- `grid`: Display as grid
+- `grid-cols-{n}`: Number of columns
+- `grid-rows-{n}`: Number of rows
+- `gap-{size}`: Gap between items
+- `col-span-{n}`: Column span
+- `row-span-{n}`: Row span
+
+### Spacing
+
+Control margin and padding:
+
+```jsx
+<div className="m-4">Margin on all sides</div>
+<div className="mx-4">Margin on x-axis (left and right)</div>
+<div className="my-4">Margin on y-axis (top and bottom)</div>
+<div className="mt-4">Margin top</div>
+<div className="mr-4">Margin right</div>
+<div className="mb-4">Margin bottom</div>
+<div className="ml-4">Margin left</div>
+
+<div className="p-4">Padding on all sides</div>
+<div className="px-4">Padding on x-axis (left and right)</div>
+<div className="py-4">Padding on y-axis (top and bottom)</div>
+<div className="pt-4">Padding top</div>
+<div className="pr-4">Padding right</div>
+<div className="pb-4">Padding bottom</div>
+<div className="pl-4">Padding left</div>
+```
+
+### Sizing
+
+Control width and height:
+
+```jsx
+<div className="w-full">Full width</div>
+<div className="w-1/2">Half width</div>
+<div className="w-1/3">One-third width</div>
+<div className="w-1/4">One-fourth width</div>
+<div className="w-1/5">One-fifth width</div>
+<div className="w-1/6">One-sixth width</div>
+<div className="w-auto">Auto width</div>
+<div className="w-screen">Screen width</div>
+
+<div className="h-full">Full height</div>
+<div className="h-screen">Screen height</div>
+<div className="h-64">Fixed height (16rem)</div>
+<div className="h-auto">Auto height</div>
+```
+
+### Positioning
+
+Control the position of elements:
+
+```jsx
+<div className="relative">
+  <div className="absolute top-0 right-0">
+    Positioned at the top right
+  </div>
+</div>
+
+<div className="fixed bottom-0 left-0">
+  Fixed at the bottom left
+</div>
+
+<div className="sticky top-0">
+  Sticky at the top
+</div>
+```
+
+## Typography
+
+### Font Family
+
+```jsx
+<p className="font-sans">Sans-serif font</p>
+<p className="font-serif">Serif font</p>
+<p className="font-mono">Monospace font</p>
+```
+
+### Font Size
+
+```jsx
+<p className="text-xs">Extra small text</p>
+<p className="text-sm">Small text</p>
+<p className="text-base">Base text</p>
+<p className="text-lg">Large text</p>
+<p className="text-xl">Extra large text</p>
+<p className="text-2xl">2xl text</p>
+<p className="text-3xl">3xl text</p>
+```
+
+### Font Weight
+
+```jsx
+<p className="font-thin">Thin text</p>
+<p className="font-extralight">Extra light text</p>
+<p className="font-light">Light text</p>
+<p className="font-normal">Normal text</p>
+<p className="font-medium">Medium text</p>
+<p className="font-semibold">Semibold text</p>
+<p className="font-bold">Bold text</p>
+<p className="font-extrabold">Extra bold text</p>
+<p className="font-black">Black text</p>
+```
+
+### Text Color
+
+```jsx
+<p className="text-black">Black text</p>
+<p className="text-white">White text</p>
+<p className="text-gray-500">Gray text</p>
+<p className="text-red-500">Red text</p>
+<p className="text-blue-500">Blue text</p>
+<p className="text-green-500">Green text</p>
+```
+
+### Text Alignment
+
+```jsx
+<p className="text-left">Left-aligned text</p>
+<p className="text-center">Center-aligned text</p>
+<p className="text-right">Right-aligned text</p>
+<p className="text-justify">Justified text</p>
+```
+
+### Line Height
+
+```jsx
+<p className="leading-none">Leading none</p>
+<p className="leading-tight">Leading tight</p>
+<p className="leading-snug">Leading snug</p>
+<p className="leading-normal">Leading normal</p>
+<p className="leading-relaxed">Leading relaxed</p>
+<p className="leading-loose">Leading loose</p>
+```
+
+## Backgrounds
+
+### Background Color
+
+```jsx
+<div className="bg-white">White background</div>
+<div className="bg-black">Black background</div>
+<div className="bg-gray-100">Light gray background</div>
+<div className="bg-blue-500">Blue background</div>
+<div className="bg-opacity-50">50% opacity</div>
+```
+
+### Background Image
+
+```jsx
+<div className="bg-[url('/path/to/image.jpg')]">
+  Background image
+</div>
+```
+
+### Background Size
+
+```jsx
+<div className="bg-cover">Cover</div>
+<div className="bg-contain">Contain</div>
+<div className="bg-auto">Auto</div>
+```
+
+### Background Position
+
+```jsx
+<div className="bg-center">Center</div>
+<div className="bg-top">Top</div>
+<div className="bg-bottom">Bottom</div>
+<div className="bg-left">Left</div>
+<div className="bg-right">Right</div>
+```
+
+## Borders
+
+### Border Width
+
+```jsx
+<div className="border">Border on all sides</div>
+<div className="border-t">Border top</div>
+<div className="border-r">Border right</div>
+<div className="border-b">Border bottom</div>
+<div className="border-l">Border left</div>
+<div className="border-2">Thicker border</div>
+```
+
+### Border Color
+
+```jsx
+<div className="border border-gray-300">Gray border</div>
+<div className="border border-blue-500">Blue border</div>
+<div className="border border-red-500">Red border</div>
+```
+
+### Border Radius
+
+```jsx
+<div className="rounded">Rounded</div>
+<div className="rounded-sm">Small radius</div>
+<div className="rounded-md">Medium radius</div>
+<div className="rounded-lg">Large radius</div>
+<div className="rounded-xl">Extra large radius</div>
+<div className="rounded-2xl">2xl radius</div>
+<div className="rounded-full">Full radius (circle for square elements)</div>
+<div className="rounded-t">Rounded top</div>
+<div className="rounded-r">Rounded right</div>
+<div className="rounded-b">Rounded bottom</div>
+<div className="rounded-l">Rounded left</div>
+```
+
+## Effects
+
+### Shadow
+
+```jsx
+<div className="shadow">Small shadow</div>
+<div className="shadow-md">Medium shadow</div>
+<div className="shadow-lg">Large shadow</div>
+<div className="shadow-xl">Extra large shadow</div>
+<div className="shadow-2xl">2xl shadow</div>
+<div className="shadow-inner">Inner shadow</div>
+<div className="shadow-none">No shadow</div>
+```
+
+### Opacity
+
+```jsx
+<div className="opacity-0">Invisible</div>
+<div className="opacity-25">25% opacity</div>
+<div className="opacity-50">50% opacity</div>
+<div className="opacity-75">75% opacity</div>
+<div className="opacity-100">Full opacity</div>
+```
+
+## Transitions and Animations
+
+### Transition
+
+```jsx
+<button className="transition duration-300 ease-in-out transform hover:scale-105">
+  Hover me
+</button>
+```
+
+### Duration
+
+```jsx
+<div className="transition duration-75">75ms</div>
+<div className="transition duration-100">100ms</div>
+<div className="transition duration-150">150ms</div>
+<div className="transition duration-200">200ms</div>
+<div className="transition duration-300">300ms</div>
+<div className="transition duration-500">500ms</div>
+<div className="transition duration-700">700ms</div>
+<div className="transition duration-1000">1000ms</div>
+```
+
+### Timing Function
+
+```jsx
+<div className="transition ease-linear">Linear</div>
+<div className="transition ease-in">Ease in</div>
+<div className="transition ease-out">Ease out</div>
+<div className="transition ease-in-out">Ease in out</div>
+```
+
+### Transform
+
+```jsx
+<div className="transform scale-50">Scale 50%</div>
+<div className="transform scale-75">Scale 75%</div>
+<div className="transform scale-100">Scale 100%</div>
+<div className="transform scale-125">Scale 125%</div>
+<div className="transform scale-150">Scale 150%</div>
+
+<div className="transform rotate-45">Rotate 45 degrees</div>
+<div className="transform rotate-90">Rotate 90 degrees</div>
+<div className="transform -rotate-45">Rotate -45 degrees</div>
+
+<div className="transform translate-x-4">Translate X</div>
+<div className="transform translate-y-4">Translate Y</div>
+<div className="transform -translate-x-4">Translate -X</div>
+<div className="transform -translate-y-4">Translate -Y</div>
+```
+
+## Forms
+
+### Form Elements
+
+```jsx
+<input type="text" className="form-input px-4 py-2 border rounded-md" />
+<select className="form-select px-4 py-2 border rounded-md">
+  <option>Option 1</option>
+  <option>Option 2</option>
+</select>
+<textarea className="form-textarea px-4 py-2 border rounded-md"></textarea>
+<input type="checkbox" className="form-checkbox h-5 w-5 text-blue-600" />
+<input type="radio" className="form-radio h-5 w-5 text-blue-600" />
+```
+
+### Focus Ring
+
+```jsx
+<input 
+  type="text" 
+  className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+/>
+```
+
+## Component Styling Best Practices
+
+### Extracting Components with @apply
+
+You can extract common utility patterns into custom CSS classes using the `@apply` directive in your CSS:
+
+```css
+/* In your CSS file */
+.btn {
+  @apply px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+.card {
+  @apply bg-white p-6 rounded-lg shadow-md;
+}
+```
+
+Then use these classes in your JSX:
+
+```jsx
+<button className="btn">Click me</button>
+<div className="card">Card content</div>
+```
+
+### Using Tailwind with React Components
+
+Create reusable components with consistent styling:
+
+```jsx
+// Button.tsx
+interface ButtonProps {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  onClick?: () => void;
+}
+
+export function Button({ 
+  children, 
+  variant = 'primary', 
+  size = 'md', 
+  onClick 
+}: ButtonProps) {
+  const baseClasses = 'font-medium rounded focus:outline-none focus:ring-2 focus:ring-offset-2';
+  
+  const variantClasses = {
+    primary: 'bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500',
+    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500',
+    danger: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500',
+  };
+  
+  const sizeClasses = {
+    sm: 'px-2 py-1 text-sm',
+    md: 'px-4 py-2',
+    lg: 'px-6 py-3 text-lg',
+  };
+  
+  const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]}`;
+  
+  return (
+    <button className={classes} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+```
+
+### Conditional Styling
+
+Apply classes conditionally:
+
+```jsx
+<div className={`
+  p-4 rounded-md
+  ${isActive ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}
+`}>
+  Conditional styling
+</div>
+```
+
+Using the `clsx` or `classnames` library:
+
+```jsx
+import clsx from 'clsx';
+
+<div className={clsx(
+  'p-4 rounded-md',
+  {
+    'bg-blue-500 text-white': isActive,
+    'bg-gray-200 text-gray-800': !isActive,
+  }
+)}>
+  Conditional styling with clsx
+</div>
+```
+
+## Responsive Design Patterns
+
+### Responsive Layout
+
+```jsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {/* Grid items */}
+</div>
+```
+
+### Responsive Navigation
+
+```jsx
+<nav className="bg-white shadow">
+  <div className="container mx-auto px-4">
+    <div className="flex justify-between items-center py-4">
+      <div className="flex items-center">
+        <div className="text-xl font-bold">Logo</div>
+      </div>
+      
+      {/* Mobile menu button */}
+      <div className="md:hidden">
+        <button className="text-gray-500 hover:text-gray-600">
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+      
+      {/* Desktop menu */}
+      <div className="hidden md:flex items-center space-x-4">
+        <a href="#" className="text-gray-800 hover:text-blue-500">Home</a>
+        <a href="#" className="text-gray-800 hover:text-blue-500">About</a>
+        <a href="#" className="text-gray-800 hover:text-blue-500">Services</a>
+        <a href="#" className="text-gray-800 hover:text-blue-500">Contact</a>
+      </div>
+    </div>
+    
+    {/* Mobile menu */}
+    {isMenuOpen && (
+      <div className="md:hidden py-4">
+        <a href="#" className="block py-2 text-gray-800 hover:text-blue-500">Home</a>
+        <a href="#" className="block py-2 text-gray-800 hover:text-blue-500">About</a>
+        <a href="#" className="block py-2 text-gray-800 hover:text-blue-500">Services</a>
+        <a href="#" className="block py-2 text-gray-800 hover:text-blue-500">Contact</a>
+      </div>
+    )}
+  </div>
+</nav>
+```
+
+### Responsive Typography
+
+```jsx
+<h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
+  Responsive Heading
+</h1>
+
+<p className="text-sm md:text-base lg:text-lg">
+  Responsive paragraph text
+</p>
+```
+
+### Responsive Spacing
+
+```jsx
+<div className="p-4 md:p-6 lg:p-8">
+  <h2 className="mb-2 md:mb-4">Heading</h2>
+  <p>Content with responsive spacing</p>
+</div>
+```
+
+### Responsive Visibility
+
+```jsx
+<div className="hidden md:block">
+  Only visible on medium screens and up
+</div>
+
+<div className="md:hidden">
+  Only visible on small screens
+</div>
+```
+
+## Dark Mode Implementation
+
+### Basic Dark Mode
+
+```jsx
+<div className="bg-white dark:bg-gray-800 text-black dark:text-white">
+  <h1 className="text-gray-900 dark:text-gray-100">Heading</h1>
+  <p className="text-gray-600 dark:text-gray-300">Paragraph</p>
+  <button className="bg-blue-500 dark:bg-blue-600">Button</button>
+</div>
+```
+
+### Dark Mode Toggle
+
+```jsx
+'use client';
+
+import { useState, useEffect } from 'react';
+
+export function DarkModeToggle() {
+  const [darkMode, setDarkMode] = useState(false);
+  
+  useEffect(() => {
+    // Check user preference or localStorage
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(isDarkMode);
+    
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+  
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode.toString());
+    
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+  
+  return (
+    <button
+      onClick={toggleDarkMode}
+      className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
+    >
+      {darkMode ? (
+        <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fillRule="evenodd"
+            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+```
+
+### System Preference Dark Mode
+
+To use the system preference for dark mode, set `darkMode: 'media'` in your `tailwind.config.js`:
+
+```js
+module.exports = {
+  darkMode: 'media',
+  // ...
+}
+```
+
+This will automatically apply dark mode styles when the user's system is set to dark mode.
+
+## Customizing Tailwind
+
+### Extending the Default Theme
+
+In your `tailwind.config.js`:
+
+```js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          // ...
+          900: '#0c4a6e',
+        },
+        secondary: {
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          // ...
+          900: '#4c1d95',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
+      spacing: {
+        '72': '18rem',
+        '84': '21rem',
+        '96': '24rem',
+      },
+      borderRadius: {
+        'xl': '1rem',
+        '2xl': '2rem',
+      },
+    },
+  },
+  // ...
+}
+```
+
+### Adding Plugins
+
+```js
+// tailwind.config.js
+module.exports = {
+  // ...
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/aspect-ratio'),
+  ],
+}
+```
+
+### Creating Custom Utilities
+
+```js
+// tailwind.config.js
+const plugin = require('tailwindcss/plugin');
+
+module.exports = {
+  // ...
+  plugins: [
+    plugin(function({ addUtilities }) {
+      const newUtilities = {
+        '.text-shadow-sm': {
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+        },
+        '.text-shadow': {
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        },
+        '.text-shadow-lg': {
+          textShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
+        },
+      };
+      
+      addUtilities(newUtilities, ['responsive', 'hover']);
+    }),
+  ],
+}
