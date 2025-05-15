@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and user management
+model User {
+  id           Int               @id @default(autoincrement())
+  username     String            @unique
+  passwordHash String
+  displayName  String
+  createdAt    DateTime          @default(now())
+  lastLogin    DateTime?
+  theme        String            @default("system") // "light", "dark", or "system"
+  dailyLogs    DailyLog[]
+  weeklyReflections WeeklyReflection[]
+}
+
+// Daily log model for morning check-ins and evening reflections
+model DailyLog {
+  id                       Int      @id @default(autoincrement())
+  userId                   Int
+  date                     DateTime
+  
+  // Morning check-in fields
+  sleepHours               Float    @default(0)
+  sleepQuality             Int      @default(0) // 1-10 scale
+  dreams                   String?
+  morningMood              Int      @default(0) // 1-10 scale
+  physicalStatus           String?
+  medicationTakenAt        String?
+  medicationDose           Float    @default(0)
+  ateWithinHour            Boolean  @default(false)
+  firstHourFeeling         String?
+  
+  // Evening reflection fields
+  focusLevel               Int      @default(0) // 1-10 scale
+  energyLevel              Int      @default(0) // 1-10 scale
+  ruminationLevel          Int      @default(0) // 1-10 scale
+  mainTrigger              String?
+  responseMethod           String[]  @default([])
+  hadTriggeringInteraction Boolean  @default(false)
+  interactionDetails       String?
+  selfWorthTiedToPerformance String?
+  overextended             String?
+  overallMood              Int      @default(0) // 1-10 scale
+  medicationEffectiveness  String?
+  helpfulFactors           String?
+  distractingFactors       String?
+  thoughtForTomorrow       String?
+  isComplete               Boolean  @default(false)
+  
+  // Additional fields
+  dayRating                Int?     // 1-10 scale
+  accomplishments          String?
+  challenges               String?
+  gratitude                String?
+  improvements             String?
+  
+  // Relationships
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
+  @@index([date])
+  @@unique([userId, date])
+}
+
+// Weekly reflection model
+model WeeklyReflection {
+  id                     Int      @id @default(autoincrement())
+  userId                 Int
+  weekStartDate          DateTime
+  weekEndDate            DateTime
+  
+  // Calculated fields
+  averageRuminationScore Float    @default(0)
+  stableDaysCount        Int      @default(0)
+  medicationEffectiveDays Int     @default(0)
+  questionedLeavingJob   Boolean  @default(false)
+  weeklyInsight          String?
+  
+  // Reflection fields
+  weekRating             Int?     // 1-10 scale
+  mentalState            String?
+  physicalState          String?
+  weekHighlights         String?
+  weekChallenges         String?
+  lessonsLearned         String?
+  nextWeekFocus          String?
+  
+  // Relationships
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
+  @@index([weekStartDate])
+  @@index([weekEndDate])
+  @@unique([userId, weekStartDate, weekEndDate])
+}
