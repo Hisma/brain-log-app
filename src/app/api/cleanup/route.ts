@@ -15,31 +15,39 @@ export async function GET() {
       );
     }
     
-    // Find logs that don't have a valid userId
+    // Find logs that don't have a valid userId (using a very large ID that doesn't exist)
     const orphanedLogs = await prisma.dailyLog.findMany({
       where: {
-        userId: null
+        userId: {
+          gt: 999999 // Use a very large number that's unlikely to be a valid user ID
+        }
       }
     });
     
     // Delete all orphaned logs
     await prisma.dailyLog.deleteMany({
       where: {
-        userId: null
+        userId: {
+          gt: 999999
+        }
       }
     });
     
     // Find reflections that don't have a valid userId
     const orphanedReflections = await prisma.weeklyReflection.findMany({
       where: {
-        userId: null
+        userId: {
+          gt: 999999
+        }
       }
     });
     
     // Delete all orphaned reflections
     await prisma.weeklyReflection.deleteMany({
       where: {
-        userId: null
+        userId: {
+          gt: 999999
+        }
       }
     });
     

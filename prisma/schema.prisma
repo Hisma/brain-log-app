@@ -23,39 +23,63 @@ model User {
   weeklyReflections WeeklyReflection[]
 }
 
-// Daily log model for morning check-ins and evening reflections
+// Daily log model with time-based sections
 model DailyLog {
   id                       Int      @id @default(autoincrement())
   userId                   Int
   date                     DateTime
   
-  // Morning check-in fields
+  // Morning check-in fields (7-9am)
   sleepHours               Float    @default(0)
   sleepQuality             Int      @default(0) // 1-10 scale
   dreams                   String?
   morningMood              Int      @default(0) // 1-10 scale
   physicalStatus           String?
-  medicationTakenAt        String?
-  medicationDose           Float    @default(0)
-  ateWithinHour            Boolean  @default(false)
-  firstHourFeeling         String?
+  breakfast                String?  // New field
+  morningCompleted         Boolean  @default(false) // New field
   
-  // Evening reflection fields
-  focusLevel               Int      @default(0) // 1-10 scale
-  energyLevel              Int      @default(0) // 1-10 scale
-  ruminationLevel          Int      @default(0) // 1-10 scale
-  mainTrigger              String?
-  responseMethod           String[]  @default([])
-  hadTriggeringInteraction Boolean  @default(false)
-  interactionDetails       String?
-  selfWorthTiedToPerformance String?
-  overextended             String?
-  overallMood              Int      @default(0) // 1-10 scale
-  medicationEffectiveness  String?
-  helpfulFactors           String?
-  distractingFactors       String?
-  thoughtForTomorrow       String?
-  isComplete               Boolean  @default(false)
+  // Concerta dose log fields (9-10am)
+  medicationTaken          Boolean  @default(false) // Modified field
+  medicationTakenAt        DateTime? // Existing field, changed to DateTime
+  medicationDose           Float    @default(0) // Existing field
+  ateWithinHour            Boolean  @default(false) // Existing field
+  firstHourFeeling         String?  // Existing field
+  reasonForSkipping        String?  // New field
+  medicationCompleted      Boolean  @default(false) // New field
+  
+  // Mid-day check-in fields (11am-1pm)
+  lunch                    String?  // New field
+  focusLevel               Int      @default(0) // Existing field
+  energyLevel              Int      @default(0) // Existing field
+  ruminationLevel          Int      @default(0) // Existing field
+  currentActivity          String?  // New field
+  distractions             String?  // New field
+  cravings                 String?  // New field
+  mainTrigger              String?  // Existing field
+  responseMethod           String[] @default([]) // Existing field
+  middayCompleted          Boolean  @default(false) // New field
+  
+  // Afternoon check-in fields (3-5pm)
+  afternoonSnack           String?  // New field
+  isCrashing               Boolean  @default(false) // New field
+  crashSymptoms            String?  // New field
+  anxietyLevel             Int?     // New field
+  isFeeling                String?  // New field
+  hadTriggeringInteraction Boolean  @default(false) // Existing field
+  interactionDetails       String?  // Existing field
+  selfWorthTiedToPerformance String? // Existing field
+  overextended             String?  // Existing field
+  afternoonCompleted       Boolean  @default(false) // New field
+  
+  // Evening reflection fields (8-10pm)
+  dinner                   String?  // New field
+  overallMood              Int      @default(0) // Existing field
+  sleepiness               Int?     // New field
+  medicationEffectiveness  String?  // Existing field
+  helpfulFactors           String?  // Existing field
+  distractingFactors       String?  // Existing field
+  thoughtForTomorrow       String?  // Existing field
+  eveningCompleted         Boolean  @default(false) // New field
   
   // Additional fields
   dayRating                Int?     // 1-10 scale
@@ -63,6 +87,7 @@ model DailyLog {
   challenges               String?
   gratitude                String?
   improvements             String?
+  isComplete               Boolean  @default(false)
   
   // Relationships
   user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

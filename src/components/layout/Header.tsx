@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Menu, User, LogOut, ChevronDown } from 'lucide-react';
-import { ModeToggle } from '@/components/ui/ModeToggle';
-import { Button } from '@/components/ui/Button';
+import { ModeToggle } from '@/components/ui/modetoggle';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 export function Header() {

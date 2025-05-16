@@ -7,30 +7,119 @@ export interface DailyLog {
   id: number;
   userId: number;
   date: Date;
+  
+  // Morning check-in fields (7-9am)
   sleepHours: number;
   sleepQuality: number;
   dreams: string;
   morningMood: number;
   physicalStatus: string;
-  medicationTakenAt: string;
+  breakfast?: string;
+  morningCompleted: boolean;
+  
+  // Concerta dose log fields (9-10am)
+  medicationTaken: boolean;
+  medicationTakenAt: Date | null;
   medicationDose: number;
   ateWithinHour: boolean;
   firstHourFeeling: string;
+  reasonForSkipping?: string;
+  medicationCompleted: boolean;
+  
+  // Mid-day check-in fields (11am-1pm)
+  lunch?: string;
   focusLevel: number;
   energyLevel: number;
   ruminationLevel: number;
+  currentActivity?: string;
+  distractions?: string;
+  cravings?: string;
   mainTrigger: string;
   responseMethod: string[];
+  middayCompleted: boolean;
+  
+  // Afternoon check-in fields (3-5pm)
+  afternoonSnack?: string;
+  isCrashing: boolean;
+  crashSymptoms?: string;
+  anxietyLevel?: number;
+  isFeeling?: string;
   hadTriggeringInteraction: boolean;
   interactionDetails: string;
   selfWorthTiedToPerformance: string;
   overextended: string;
+  afternoonCompleted: boolean;
+  
+  // Evening reflection fields (8-10pm)
+  dinner?: string;
   overallMood: number;
+  sleepiness?: number;
   medicationEffectiveness: string;
   helpfulFactors: string;
   distractingFactors: string;
   thoughtForTomorrow: string;
+  eveningCompleted: boolean;
+  
+  // Additional fields
   isComplete: boolean;
+  dayRating?: number;
+  accomplishments?: string;
+  challenges?: string;
+  gratitude?: string;
+  improvements?: string;
+}
+
+// Define interfaces for each form section
+export interface MorningCheckInData {
+  sleepHours: number;
+  sleepQuality: number;
+  dreams?: string;
+  morningMood: number;
+  physicalStatus?: string;
+  breakfast?: string;
+}
+
+export interface ConcertaDoseLogData {
+  medicationTaken: boolean;
+  medicationTakenAt?: Date;
+  medicationDose?: number;
+  ateWithinHour?: boolean;
+  firstHourFeeling?: string;
+  reasonForSkipping?: string;
+}
+
+export interface MidDayCheckInData {
+  lunch?: string;
+  focusLevel: number;
+  energyLevel: number;
+  ruminationLevel: number;
+  currentActivity?: string;
+  distractions?: string;
+  cravings?: string;
+  mainTrigger?: string;
+  responseMethod: string[];
+}
+
+export interface AfternoonCheckInData {
+  afternoonSnack?: string;
+  isCrashing: boolean;
+  crashSymptoms?: string;
+  anxietyLevel?: number;
+  isFeeling?: string;
+  hadTriggeringInteraction: boolean;
+  interactionDetails?: string;
+  selfWorthTiedToPerformance?: string;
+  overextended?: string;
+}
+
+export interface EveningReflectionData {
+  dinner?: string;
+  overallMood: number;
+  sleepiness?: number;
+  medicationEffectiveness?: string;
+  helpfulFactors?: string;
+  distractingFactors?: string;
+  thoughtForTomorrow?: string;
   dayRating?: number;
   accomplishments?: string;
   challenges?: string;
@@ -41,44 +130,65 @@ export interface DailyLog {
 /**
  * Create a new morning check-in entry
  */
-export async function createMorningCheckIn(userId: number, data: {
-  date: Date;
-  sleepHours: number;
-  sleepQuality: number;
-  dreams: string;
-  morningMood: number;
-  physicalStatus: string;
-}) {
+export async function createMorningCheckIn(userId: number, data: MorningCheckInData & { date: Date }) {
   // Create a new daily log with morning check-in data
   const dailyLog = {
     userId,
     date: data.date,
     sleepHours: data.sleepHours,
     sleepQuality: data.sleepQuality,
-    dreams: data.dreams,
+    dreams: data.dreams || '',
     morningMood: data.morningMood,
-    physicalStatus: data.physicalStatus,
+    physicalStatus: data.physicalStatus || '',
+    breakfast: data.breakfast || '',
+    morningCompleted: true,
     
     // Initialize other fields with default values
-    medicationTakenAt: '',
+    medicationTaken: false,
+    medicationTakenAt: null,
     medicationDose: 0,
     ateWithinHour: false,
     firstHourFeeling: '',
+    reasonForSkipping: '',
+    medicationCompleted: false,
+    
+    lunch: '',
     focusLevel: 0,
     energyLevel: 0,
     ruminationLevel: 0,
+    currentActivity: '',
+    distractions: '',
+    cravings: '',
     mainTrigger: '',
     responseMethod: [],
+    middayCompleted: false,
+    
+    afternoonSnack: '',
+    isCrashing: false,
+    crashSymptoms: '',
+    anxietyLevel: 0,
+    isFeeling: '',
     hadTriggeringInteraction: false,
     interactionDetails: '',
     selfWorthTiedToPerformance: '',
     overextended: '',
+    afternoonCompleted: false,
+    
+    dinner: '',
     overallMood: 0,
+    sleepiness: 0,
     medicationEffectiveness: '',
     helpfulFactors: '',
     distractingFactors: '',
     thoughtForTomorrow: '',
-    isComplete: false
+    eveningCompleted: false,
+    
+    isComplete: false,
+    dayRating: 0,
+    accomplishments: '',
+    challenges: '',
+    gratitude: '',
+    improvements: ''
   };
   
   const response = await post<DailyLog>('daily-logs', dailyLog);
@@ -86,7 +196,211 @@ export async function createMorningCheckIn(userId: number, data: {
 }
 
 /**
- * Update medication and routine data
+ * Update morning check-in data
+ */
+export async function updateMorningCheckIn(userId: number, id: number, data: MorningCheckInData, isUpdate = false) {
+  // Get the current log first
+  const log = await getDailyLogById(userId, id);
+  if (!log) {
+    throw new Error('Log not found or unauthorized access');
+  }
+  
+  // Update with new data
+  const updatedLog = {
+    ...log,
+    sleepHours: data.sleepHours,
+    sleepQuality: data.sleepQuality,
+    dreams: data.dreams || log.dreams,
+    morningMood: data.morningMood,
+    physicalStatus: data.physicalStatus || log.physicalStatus,
+    breakfast: data.breakfast || log.breakfast,
+    morningCompleted: true
+  };
+  
+  await put<DailyLog>('daily-logs', updatedLog);
+  
+  // Check if all sections are complete
+  if (!isUpdate) {
+    await checkDailyLogCompletion(userId, id);
+  }
+  
+  return id;
+}
+
+/**
+ * Update Concerta dose log data
+ */
+export async function updateConcertaDoseLog(userId: number, id: number, data: ConcertaDoseLogData, isUpdate = false) {
+  // Get the current log first
+  const log = await getDailyLogById(userId, id);
+  if (!log) {
+    throw new Error('Log not found or unauthorized access');
+  }
+  
+  // Update with new data
+  const updatedLog = {
+    ...log,
+    medicationTaken: data.medicationTaken,
+    medicationTakenAt: data.medicationTaken ? data.medicationTakenAt || null : null,
+    medicationDose: data.medicationTaken ? data.medicationDose || 0 : 0,
+    ateWithinHour: data.medicationTaken ? data.ateWithinHour || false : false,
+    firstHourFeeling: data.medicationTaken ? data.firstHourFeeling || '' : '',
+    reasonForSkipping: !data.medicationTaken ? data.reasonForSkipping || '' : '',
+    medicationCompleted: true
+  };
+  
+  await put<DailyLog>('daily-logs', updatedLog);
+  
+  // Check if all sections are complete
+  if (!isUpdate) {
+    await checkDailyLogCompletion(userId, id);
+  }
+  
+  return id;
+}
+
+/**
+ * Update midday focus and emotion data
+ */
+export async function updateMidDayCheckIn(userId: number, id: number, data: MidDayCheckInData, isUpdate = false) {
+  // Get the current log first
+  const log = await getDailyLogById(userId, id);
+  if (!log) {
+    throw new Error('Log not found or unauthorized access');
+  }
+  
+  // Update with new data
+  const updatedLog = {
+    ...log,
+    lunch: data.lunch || log.lunch,
+    focusLevel: data.focusLevel,
+    energyLevel: data.energyLevel,
+    ruminationLevel: data.ruminationLevel,
+    currentActivity: data.currentActivity || log.currentActivity,
+    distractions: data.distractions || log.distractions,
+    cravings: data.cravings || log.cravings,
+    mainTrigger: data.mainTrigger || log.mainTrigger,
+    responseMethod: data.responseMethod,
+    middayCompleted: true
+  };
+  
+  await put<DailyLog>('daily-logs', updatedLog);
+  
+  // Check if all sections are complete
+  if (!isUpdate) {
+    await checkDailyLogCompletion(userId, id);
+  }
+  
+  return id;
+}
+
+/**
+ * Update afternoon checkpoint data
+ */
+export async function updateAfternoonCheckIn(userId: number, id: number, data: AfternoonCheckInData, isUpdate = false) {
+  // Get the current log first
+  const log = await getDailyLogById(userId, id);
+  if (!log) {
+    throw new Error('Log not found or unauthorized access');
+  }
+  
+  // Update with new data
+  const updatedLog = {
+    ...log,
+    afternoonSnack: data.afternoonSnack || log.afternoonSnack,
+    isCrashing: data.isCrashing,
+    crashSymptoms: data.isCrashing ? data.crashSymptoms || '' : '',
+    anxietyLevel: data.anxietyLevel || log.anxietyLevel,
+    isFeeling: data.isFeeling || log.isFeeling,
+    hadTriggeringInteraction: data.hadTriggeringInteraction,
+    interactionDetails: data.hadTriggeringInteraction ? data.interactionDetails || '' : '',
+    selfWorthTiedToPerformance: data.selfWorthTiedToPerformance || log.selfWorthTiedToPerformance,
+    overextended: data.overextended || log.overextended,
+    afternoonCompleted: true
+  };
+  
+  await put<DailyLog>('daily-logs', updatedLog);
+  
+  // Check if all sections are complete
+  if (!isUpdate) {
+    await checkDailyLogCompletion(userId, id);
+  }
+  
+  return id;
+}
+
+/**
+ * Update end of day reflection data
+ */
+export async function updateEveningReflection(userId: number, id: number, data: EveningReflectionData, isUpdate = false) {
+  // Get the current log first
+  const log = await getDailyLogById(userId, id);
+  if (!log) {
+    throw new Error('Log not found or unauthorized access');
+  }
+  
+  // Update with new data
+  const updatedLog = {
+    ...log,
+    dinner: data.dinner || log.dinner,
+    overallMood: data.overallMood,
+    sleepiness: data.sleepiness || log.sleepiness,
+    medicationEffectiveness: data.medicationEffectiveness || log.medicationEffectiveness,
+    helpfulFactors: data.helpfulFactors || log.helpfulFactors,
+    distractingFactors: data.distractingFactors || log.distractingFactors,
+    thoughtForTomorrow: data.thoughtForTomorrow || log.thoughtForTomorrow,
+    dayRating: data.dayRating || log.dayRating,
+    accomplishments: data.accomplishments || log.accomplishments,
+    challenges: data.challenges || log.challenges,
+    gratitude: data.gratitude || log.gratitude,
+    improvements: data.improvements || log.improvements,
+    eveningCompleted: true
+  };
+  
+  await put<DailyLog>('daily-logs', updatedLog);
+  
+  // Check if all sections are complete
+  if (!isUpdate) {
+    await checkDailyLogCompletion(userId, id);
+  }
+  
+  return id;
+}
+
+/**
+ * Check if all sections of the daily log are complete and update isComplete status
+ */
+export async function checkDailyLogCompletion(userId: number, id: number) {
+  // Get the current log
+  const log = await getDailyLogById(userId, id);
+  if (!log) {
+    throw new Error('Log not found or unauthorized access');
+  }
+  
+  // Check if all sections are complete
+  const isComplete = 
+    log.morningCompleted && 
+    log.medicationCompleted && 
+    log.middayCompleted && 
+    log.afternoonCompleted && 
+    log.eveningCompleted;
+  
+  // Only update if the status has changed
+  if (log.isComplete !== isComplete) {
+    const updatedLog = {
+      ...log,
+      isComplete
+    };
+    
+    await put<DailyLog>('daily-logs', updatedLog);
+  }
+  
+  return isComplete;
+}
+
+// Legacy methods for backward compatibility
+/**
+ * Update medication and routine data (legacy method)
  */
 export async function updateMedicationRoutine(userId: number, id: number, data: {
   medicationTakenAt: string;
@@ -100,21 +414,20 @@ export async function updateMedicationRoutine(userId: number, id: number, data: 
     throw new Error('Log not found or unauthorized access');
   }
   
-  // Update with new data
-  const updatedLog = {
-    ...log,
-    medicationTakenAt: data.medicationTakenAt,
+  // Convert to new format
+  const concertaData: ConcertaDoseLogData = {
+    medicationTaken: true,
+    medicationTakenAt: new Date(data.medicationTakenAt),
     medicationDose: data.medicationDose,
     ateWithinHour: data.ateWithinHour,
     firstHourFeeling: data.firstHourFeeling
   };
   
-  await put<DailyLog>('daily-logs', updatedLog);
-  return id;
+  return updateConcertaDoseLog(userId, id, concertaData);
 }
 
 /**
- * Update midday focus and emotion data
+ * Update midday focus and emotion data (legacy method)
  */
 export async function updateMiddayFocusEmotion(userId: number, id: number, data: {
   focusLevel: number;
@@ -129,9 +442,8 @@ export async function updateMiddayFocusEmotion(userId: number, id: number, data:
     throw new Error('Log not found or unauthorized access');
   }
   
-  // Update with new data
-  const updatedLog = {
-    ...log,
+  // Convert to new format
+  const midDayData: MidDayCheckInData = {
     focusLevel: data.focusLevel,
     energyLevel: data.energyLevel,
     ruminationLevel: data.ruminationLevel,
@@ -139,12 +451,11 @@ export async function updateMiddayFocusEmotion(userId: number, id: number, data:
     responseMethod: data.responseMethod
   };
   
-  await put<DailyLog>('daily-logs', updatedLog);
-  return id;
+  return updateMidDayCheckIn(userId, id, midDayData);
 }
 
 /**
- * Update afternoon checkpoint data
+ * Update afternoon checkpoint data (legacy method)
  */
 export async function updateAfternoonCheckpoint(userId: number, id: number, data: {
   hadTriggeringInteraction: boolean;
@@ -158,21 +469,20 @@ export async function updateAfternoonCheckpoint(userId: number, id: number, data
     throw new Error('Log not found or unauthorized access');
   }
   
-  // Update with new data
-  const updatedLog = {
-    ...log,
+  // Convert to new format
+  const afternoonData: AfternoonCheckInData = {
+    isCrashing: false,
     hadTriggeringInteraction: data.hadTriggeringInteraction,
     interactionDetails: data.interactionDetails,
     selfWorthTiedToPerformance: data.selfWorthTiedToPerformance,
     overextended: data.overextended
   };
   
-  await put<DailyLog>('daily-logs', updatedLog);
-  return id;
+  return updateAfternoonCheckIn(userId, id, afternoonData);
 }
 
 /**
- * Update end of day reflection data
+ * Update end of day reflection data (legacy method)
  */
 export async function updateEndOfDayReflection(userId: number, id: number, data: {
   overallMood: number;
@@ -192,9 +502,8 @@ export async function updateEndOfDayReflection(userId: number, id: number, data:
     throw new Error('Log not found or unauthorized access');
   }
   
-  // Update with new data
-  const updatedLog = {
-    ...log,
+  // Convert to new format
+  const eveningData: EveningReflectionData = {
     overallMood: data.overallMood,
     medicationEffectiveness: data.medicationEffectiveness,
     helpfulFactors: data.helpfulFactors,
@@ -204,12 +513,10 @@ export async function updateEndOfDayReflection(userId: number, id: number, data:
     accomplishments: data.accomplishments,
     challenges: data.challenges,
     gratitude: data.gratitude,
-    improvements: data.improvements,
-    isComplete: true
+    improvements: data.improvements
   };
   
-  await put<DailyLog>('daily-logs', updatedLog);
-  return id;
+  return updateEveningReflection(userId, id, eveningData);
 }
 
 /**
@@ -325,11 +632,22 @@ export async function getRecent(userId: number, limit: number) {
 
 // Export a service object for compatibility with existing code
 export const dailyLogService = {
+  // New methods
   createMorningCheckIn,
+  updateMorningCheckIn,
+  updateConcertaDoseLog,
+  updateMidDayCheckIn,
+  updateAfternoonCheckIn,
+  updateEveningReflection,
+  checkDailyLogCompletion,
+  
+  // Legacy methods for backward compatibility
   updateMedicationRoutine,
   updateMiddayFocusEmotion,
   updateAfternoonCheckpoint,
   updateEndOfDayReflection,
+  
+  // Utility methods
   getDailyLogById,
   getDailyLogByDate,
   getAllDailyLogs,

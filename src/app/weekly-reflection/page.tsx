@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { WeeklyReflectionForm } from '@/components/forms/WeeklyReflectionForm';
 import { weeklyReflectionService, WeeklyReflection } from '@/lib/services/weeklyReflectionService';
 import { formatDate, formatWeekRange, getWeekRange } from '@/lib/utils/index';

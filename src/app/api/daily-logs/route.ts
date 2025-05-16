@@ -50,29 +50,60 @@ export async function POST(request: Request) {
       data: {
         userId,
         date: new Date(data.date),
+        
+        // Morning check-in fields (7-9am)
         sleepHours: data.sleepHours || 0,
         sleepQuality: data.sleepQuality || 0,
         dreams: data.dreams || '',
         morningMood: data.morningMood || 0,
         physicalStatus: data.physicalStatus || '',
-        medicationTakenAt: data.medicationTakenAt || '',
+        breakfast: data.breakfast || '',
+        morningCompleted: data.morningCompleted || false,
+        
+        // Concerta dose log fields (9-10am)
+        medicationTaken: data.medicationTaken || false,
+        medicationTakenAt: data.medicationTakenAt ? new Date(data.medicationTakenAt) : null,
         medicationDose: data.medicationDose || 0,
         ateWithinHour: data.ateWithinHour || false,
         firstHourFeeling: data.firstHourFeeling || '',
+        reasonForSkipping: data.reasonForSkipping || '',
+        medicationCompleted: data.medicationCompleted || false,
+        
+        // Mid-day check-in fields (11am-1pm)
+        lunch: data.lunch || '',
         focusLevel: data.focusLevel || 0,
         energyLevel: data.energyLevel || 0,
         ruminationLevel: data.ruminationLevel || 0,
+        currentActivity: data.currentActivity || '',
+        distractions: data.distractions || '',
+        cravings: data.cravings || '',
         mainTrigger: data.mainTrigger || '',
         responseMethod: data.responseMethod || [],
+        middayCompleted: data.middayCompleted || false,
+        
+        // Afternoon check-in fields (3-5pm)
+        afternoonSnack: data.afternoonSnack || '',
+        isCrashing: data.isCrashing || false,
+        crashSymptoms: data.crashSymptoms || '',
+        anxietyLevel: data.anxietyLevel || 0,
+        isFeeling: data.isFeeling || '',
         hadTriggeringInteraction: data.hadTriggeringInteraction || false,
         interactionDetails: data.interactionDetails || '',
         selfWorthTiedToPerformance: data.selfWorthTiedToPerformance || '',
         overextended: data.overextended || '',
+        afternoonCompleted: data.afternoonCompleted || false,
+        
+        // Evening reflection fields (8-10pm)
+        dinner: data.dinner || '',
         overallMood: data.overallMood || 0,
+        sleepiness: data.sleepiness || 0,
         medicationEffectiveness: data.medicationEffectiveness || '',
         helpfulFactors: data.helpfulFactors || '',
         distractingFactors: data.distractingFactors || '',
         thoughtForTomorrow: data.thoughtForTomorrow || '',
+        eveningCompleted: data.eveningCompleted || false,
+        
+        // Additional fields
         isComplete: data.isComplete || false,
         dayRating: data.dayRating,
         accomplishments: data.accomplishments,
@@ -232,29 +263,61 @@ export async function PUT(request: Request) {
         id: data.id
       },
       data: {
+        // Morning check-in fields (7-9am)
         sleepHours: data.sleepHours !== undefined ? data.sleepHours : existingLog.sleepHours,
         sleepQuality: data.sleepQuality !== undefined ? data.sleepQuality : existingLog.sleepQuality,
         dreams: data.dreams !== undefined ? data.dreams : existingLog.dreams,
         morningMood: data.morningMood !== undefined ? data.morningMood : existingLog.morningMood,
         physicalStatus: data.physicalStatus !== undefined ? data.physicalStatus : existingLog.physicalStatus,
-        medicationTakenAt: data.medicationTakenAt !== undefined ? data.medicationTakenAt : existingLog.medicationTakenAt,
+        breakfast: data.breakfast !== undefined ? data.breakfast : existingLog.breakfast,
+        morningCompleted: data.morningCompleted !== undefined ? data.morningCompleted : existingLog.morningCompleted,
+        
+        // Concerta dose log fields (9-10am)
+        medicationTaken: data.medicationTaken !== undefined ? data.medicationTaken : existingLog.medicationTaken,
+        medicationTakenAt: data.medicationTakenAt !== undefined ? 
+          (data.medicationTakenAt ? new Date(data.medicationTakenAt) : null) : 
+          existingLog.medicationTakenAt,
         medicationDose: data.medicationDose !== undefined ? data.medicationDose : existingLog.medicationDose,
         ateWithinHour: data.ateWithinHour !== undefined ? data.ateWithinHour : existingLog.ateWithinHour,
         firstHourFeeling: data.firstHourFeeling !== undefined ? data.firstHourFeeling : existingLog.firstHourFeeling,
+        reasonForSkipping: data.reasonForSkipping !== undefined ? data.reasonForSkipping : existingLog.reasonForSkipping,
+        medicationCompleted: data.medicationCompleted !== undefined ? data.medicationCompleted : existingLog.medicationCompleted,
+        
+        // Mid-day check-in fields (11am-1pm)
+        lunch: data.lunch !== undefined ? data.lunch : existingLog.lunch,
         focusLevel: data.focusLevel !== undefined ? data.focusLevel : existingLog.focusLevel,
         energyLevel: data.energyLevel !== undefined ? data.energyLevel : existingLog.energyLevel,
         ruminationLevel: data.ruminationLevel !== undefined ? data.ruminationLevel : existingLog.ruminationLevel,
+        currentActivity: data.currentActivity !== undefined ? data.currentActivity : existingLog.currentActivity,
+        distractions: data.distractions !== undefined ? data.distractions : existingLog.distractions,
+        cravings: data.cravings !== undefined ? data.cravings : existingLog.cravings,
         mainTrigger: data.mainTrigger !== undefined ? data.mainTrigger : existingLog.mainTrigger,
         responseMethod: data.responseMethod !== undefined ? data.responseMethod : existingLog.responseMethod,
+        middayCompleted: data.middayCompleted !== undefined ? data.middayCompleted : existingLog.middayCompleted,
+        
+        // Afternoon check-in fields (3-5pm)
+        afternoonSnack: data.afternoonSnack !== undefined ? data.afternoonSnack : existingLog.afternoonSnack,
+        isCrashing: data.isCrashing !== undefined ? data.isCrashing : existingLog.isCrashing,
+        crashSymptoms: data.crashSymptoms !== undefined ? data.crashSymptoms : existingLog.crashSymptoms,
+        anxietyLevel: data.anxietyLevel !== undefined ? data.anxietyLevel : existingLog.anxietyLevel,
+        isFeeling: data.isFeeling !== undefined ? data.isFeeling : existingLog.isFeeling,
         hadTriggeringInteraction: data.hadTriggeringInteraction !== undefined ? data.hadTriggeringInteraction : existingLog.hadTriggeringInteraction,
         interactionDetails: data.interactionDetails !== undefined ? data.interactionDetails : existingLog.interactionDetails,
         selfWorthTiedToPerformance: data.selfWorthTiedToPerformance !== undefined ? data.selfWorthTiedToPerformance : existingLog.selfWorthTiedToPerformance,
         overextended: data.overextended !== undefined ? data.overextended : existingLog.overextended,
+        afternoonCompleted: data.afternoonCompleted !== undefined ? data.afternoonCompleted : existingLog.afternoonCompleted,
+        
+        // Evening reflection fields (8-10pm)
+        dinner: data.dinner !== undefined ? data.dinner : existingLog.dinner,
         overallMood: data.overallMood !== undefined ? data.overallMood : existingLog.overallMood,
+        sleepiness: data.sleepiness !== undefined ? data.sleepiness : existingLog.sleepiness,
         medicationEffectiveness: data.medicationEffectiveness !== undefined ? data.medicationEffectiveness : existingLog.medicationEffectiveness,
         helpfulFactors: data.helpfulFactors !== undefined ? data.helpfulFactors : existingLog.helpfulFactors,
         distractingFactors: data.distractingFactors !== undefined ? data.distractingFactors : existingLog.distractingFactors,
         thoughtForTomorrow: data.thoughtForTomorrow !== undefined ? data.thoughtForTomorrow : existingLog.thoughtForTomorrow,
+        eveningCompleted: data.eveningCompleted !== undefined ? data.eveningCompleted : existingLog.eveningCompleted,
+        
+        // Additional fields
         isComplete: data.isComplete !== undefined ? data.isComplete : existingLog.isComplete,
         dayRating: data.dayRating !== undefined ? data.dayRating : existingLog.dayRating,
         accomplishments: data.accomplishments !== undefined ? data.accomplishments : existingLog.accomplishments,

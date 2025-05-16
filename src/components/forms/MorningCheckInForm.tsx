@@ -1,32 +1,44 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Button } from '@/components/ui/Button';
-import { Slider } from '@/components/ui/Slider';
-import { createMorningCheckIn } from '@/lib/services/dailyLogService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { createMorningCheckIn, updateMorningCheckIn } from '@/lib/services/dailyLogService';
 
 interface MorningCheckInFormProps {
   initialValues?: {
-    sleepHours: number;
-    sleepQuality: number;
-    dreams: string;
-    morningMood: number;
-    physicalStatus: string;
+    sleepHours?: number;
+    sleepQuality?: number;
+    dreams?: string;
+    morningMood?: number;
+    physicalStatus?: string;
+    breakfast?: string;
   };
+  isUpdate?: boolean;
+  dailyLogId?: number;
   onSubmit?: (data: any) => void;
   onNext?: () => void;
+  onBack?: () => void;
 }
 
-export function MorningCheckInForm({ initialValues, onSubmit, onNext }: MorningCheckInFormProps) {
+export function MorningCheckInForm({ 
+  initialValues, 
+  isUpdate = false,
+  dailyLogId,
+  onSubmit, 
+  onNext,
+  onBack
+}: MorningCheckInFormProps) {
   const [sleepHours, setSleepHours] = useState(initialValues?.sleepHours || 7);
   const [sleepQuality, setSleepQuality] = useState(initialValues?.sleepQuality || 5);
   const [dreams, setDreams] = useState(initialValues?.dreams || '');
   const [morningMood, setMorningMood] = useState(initialValues?.morningMood || 5);
   const [physicalStatus, setPhysicalStatus] = useState(initialValues?.physicalStatus || '');
+  const [breakfast, setBreakfast] = useState(initialValues?.breakfast || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,12 +47,12 @@ export function MorningCheckInForm({ initialValues, onSubmit, onNext }: MorningC
     
     try {
       const data = {
-        date: new Date(),
         sleepHours,
         sleepQuality,
         dreams,
         morningMood,
-        physicalStatus
+        physicalStatus,
+        breakfast
       };
       
       // Get the user ID from the session
@@ -48,8 +60,17 @@ export function MorningCheckInForm({ initialValues, onSubmit, onNext }: MorningC
       // This should be replaced with the actual user ID from the session
       const userId = 1;
       
-      // Save the morning check-in data
-      await createMorningCheckIn(userId, data);
+      if (isUpdate && dailyLogId) {
+        // Update existing morning check-in
+        await updateMorningCheckIn(userId, dailyLogId, data, isUpdate);
+      } else {
+        // Create new morning check-in
+        const fullData = {
+          ...data,
+          date: new Date()
+        };
+        await createMorningCheckIn(userId, fullData);
+      }
       
       if (onSubmit) {
         onSubmit(data);
@@ -157,14 +178,35 @@ export function MorningCheckInForm({ initialValues, onSubmit, onNext }: MorningC
               </SelectContent>
             </Select>
           </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="breakfast">
+              Breakfast
+            </label>
+            <Input 
+              id="breakfast"
+              value={breakfast}
+              onChange={(e) => setBreakfast(e.target.value)}
+              placeholder="What did you eat for breakfast?"
+            />
+          </div>
         
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-between mt-6">
+            {onBack && (
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={onBack}
+              >
+                Back
+              </Button>
+            )}
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full"
+              className={onBack ? "ml-auto" : "w-full"}
             >
-              {isSubmitting ? 'Saving...' : onNext ? 'Next' : 'Save Morning Check-In'}
+              {isSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Morning Check-In'}
             </Button>
           </div>
         </form>

@@ -1,29 +1,58 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Textarea } from '@/components/ui/Textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Button } from '@/components/ui/Button';
-import { Slider } from '@/components/ui/Slider';
-import { updateEndOfDayReflection } from '@/lib/services/dailyLogService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { updateEveningReflection } from '@/lib/services/dailyLogService';
 
 interface EveningReflectionFormProps {
+  initialValues?: {
+    dinner?: string;
+    overallMood?: number;
+    sleepiness?: number;
+    medicationEffectiveness?: string;
+    helpfulFactors?: string;
+    distractingFactors?: string;
+    thoughtForTomorrow?: string;
+    tomorrowPlan?: string;
+    dayRating?: number;
+    accomplishments?: string;
+    challenges?: string;
+    gratitude?: string;
+    improvements?: string;
+  };
+  isUpdate?: boolean;
+  dailyLogId?: number;
   onSubmit?: (data: any) => void;
+  onNext?: () => void;
   onBack?: () => void;
 }
 
-export function EveningReflectionForm({ onSubmit, onBack }: EveningReflectionFormProps) {
-  const [overallMood, setOverallMood] = useState(5);
-  const [medicationEffectiveness, setMedicationEffectiveness] = useState('');
-  const [helpfulFactors, setHelpfulFactors] = useState('');
-  const [distractingFactors, setDistractingFactors] = useState('');
-  const [thoughtForTomorrow, setThoughtForTomorrow] = useState('');
-  const [dayRating, setDayRating] = useState(5);
-  const [accomplishments, setAccomplishments] = useState('');
-  const [challenges, setChallenges] = useState('');
-  const [gratitude, setGratitude] = useState('');
-  const [improvements, setImprovements] = useState('');
+export function EveningReflectionForm({ 
+  initialValues, 
+  isUpdate = false,
+  dailyLogId,
+  onSubmit, 
+  onNext,
+  onBack 
+}: EveningReflectionFormProps) {
+  const [dinner, setDinner] = useState(initialValues?.dinner || '');
+  const [overallMood, setOverallMood] = useState(initialValues?.overallMood || 5);
+  const [sleepiness, setSleepiness] = useState(initialValues?.sleepiness || 5);
+  const [medicationEffectiveness, setMedicationEffectiveness] = useState(initialValues?.medicationEffectiveness || '');
+  const [helpfulFactors, setHelpfulFactors] = useState(initialValues?.helpfulFactors || '');
+  const [distractingFactors, setDistractingFactors] = useState(initialValues?.distractingFactors || '');
+  const [thoughtForTomorrow, setThoughtForTomorrow] = useState(initialValues?.thoughtForTomorrow || '');
+  const [tomorrowPlan, setTomorrowPlan] = useState(initialValues?.tomorrowPlan || '');
+  const [dayRating, setDayRating] = useState(initialValues?.dayRating || 5);
+  const [accomplishments, setAccomplishments] = useState(initialValues?.accomplishments || '');
+  const [challenges, setChallenges] = useState(initialValues?.challenges || '');
+  const [gratitude, setGratitude] = useState(initialValues?.gratitude || '');
+  const [improvements, setImprovements] = useState(initialValues?.improvements || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,11 +61,14 @@ export function EveningReflectionForm({ onSubmit, onBack }: EveningReflectionFor
     
     try {
       const data = {
+        dinner,
         overallMood,
+        sleepiness,
         medicationEffectiveness,
         helpfulFactors,
         distractingFactors,
         thoughtForTomorrow,
+        tomorrowPlan,
         dayRating,
         accomplishments,
         challenges,
@@ -49,12 +81,11 @@ export function EveningReflectionForm({ onSubmit, onBack }: EveningReflectionFor
       // This should be replaced with the actual user ID from the session
       const userId = 1;
       
-      // For now, we'll use a placeholder log ID of 1
-      // In a real implementation, this would be passed as a prop or retrieved from the current log
-      const logId = 1;
+      // For now, we'll use a placeholder log ID if not provided
+      const logId = dailyLogId || 1;
       
       // Save the evening reflection data
-      await updateEndOfDayReflection(userId, logId, data);
+      await updateEveningReflection(userId, logId, data, isUpdate);
       
       if (onSubmit) {
         onSubmit(data);
@@ -69,10 +100,22 @@ export function EveningReflectionForm({ onSubmit, onBack }: EveningReflectionFor
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Evening Reflection</CardTitle>
+        <CardTitle>Evening Reflection (8-10pm)</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="dinner">
+              Dinner
+            </label>
+            <Input 
+              id="dinner"
+              value={dinner}
+              onChange={(e) => setDinner(e.target.value)}
+              placeholder="What did you eat for dinner?"
+            />
+          </div>
+          
           <div className="space-y-2">
             <label className="text-sm font-medium">
               Overall Mood Today (1-10)
@@ -90,6 +133,23 @@ export function EveningReflectionForm({ onSubmit, onBack }: EveningReflectionFor
             </div>
           </div>
         
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Sleepiness Level (1-10)
+            </label>
+            <Slider 
+              defaultValue={[sleepiness]}
+              max={10}
+              step={1}
+              onValueChange={(value) => setSleepiness(value[0])}
+              className="py-4"
+            />
+            <div className="flex justify-between text-xs">
+              <span>Wide Awake</span>
+              <span>Very Sleepy</span>
+            </div>
+          </div>
+          
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="medication-effectiveness">
               Medication Effectiveness
@@ -217,6 +277,19 @@ export function EveningReflectionForm({ onSubmit, onBack }: EveningReflectionFor
               rows={3}
             />
           </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="tomorrow-plan">
+              Tomorrow's Plan
+            </label>
+            <Textarea 
+              id="tomorrow-plan"
+              value={tomorrowPlan}
+              onChange={(e) => setTomorrowPlan(e.target.value)}
+              placeholder="What's your plan for tomorrow?"
+              rows={3}
+            />
+          </div>
         
           <div className="flex justify-between mt-6">
             {onBack && (
@@ -231,9 +304,9 @@ export function EveningReflectionForm({ onSubmit, onBack }: EveningReflectionFor
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className={onBack ? "" : "w-full"}
+              className={onBack ? "ml-auto" : "w-full"}
             >
-              {isSubmitting ? 'Saving...' : 'Complete Daily Log'}
+              {isSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Complete Daily Log'}
             </Button>
           </div>
         </form>

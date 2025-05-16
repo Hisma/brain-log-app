@@ -2,259 +2,337 @@
 
 ## 1. Project Architecture
 
-We'll build a modern, responsive web application using:
-- **Next.js** as our React framework (provides routing, server components, and optimizations)
+We've built a modern, responsive web application using:
+- **Next.js** as our React framework (provides routing, server components, and API routes)
+- **TypeScript** for type safety and improved developer experience
 - **Tailwind CSS** for styling (utility-first approach for rapid UI development)
-- **Dexie.js** for local data storage (IndexedDB wrapper for offline-first functionality)
+- **shadcn/ui** for UI components (built on Radix UI primitives and Tailwind CSS)
+- **PostgreSQL** for server-side data storage (replacing the original client-side Dexie.js approach)
+- **Prisma** as the ORM for database access
+- **NextAuth.js** for authentication and session management
 
-The application will follow these architectural principles:
-- Offline-first design
+The application follows these architectural principles:
+- Server-side data persistence
+- Multi-device access to user data
 - Responsive UI that works on all devices
 - Component-based structure
 - Type safety with TypeScript
+- Accessibility with Radix UI primitives
 
 ## 2. Data Model
 
-Based on the daily log template, we'll create the following data schema:
+Based on the daily log template, we've created the following data schema in Prisma:
 
 ```typescript
-// Database definition
-class BrainLogDB extends Dexie {
-  dailyLogs!: Dexie.Table<DailyLog, number>;
-  weeklyReflections!: Dexie.Table<WeeklyReflection, number>;
-  
-  constructor() {
-    super('BrainLogDB');
-    
-    this.version(1).stores({
-      dailyLogs: '++id, date, overallMood',
-      weeklyReflections: '++id, weekStartDate, weekEndDate'
-    });
-  }
+// Prisma schema
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String
+  name          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  dailyLogs     DailyLog[]
+  weeklyReflections WeeklyReflection[]
 }
 
-// Daily log entry
-interface DailyLog {
-  id?: number;
-  date: Date;
+model DailyLog {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  user          User      @relation(fields: [userId], references: [id])
+  date          DateTime
   
   // Morning Check-In
-  sleepHours: number;
-  sleepQuality: number; // 1-10
-  dreams: string;
-  morningMood: number; // 1-10
-  physicalStatus: string;
+  sleepHours    Float
+  sleepQuality  Int       // 1-10
+  dreams        String?
+  morningMood   Int       // 1-10
+  physicalStatus String?
   
   // Medication + Routine
-  medicationTakenAt: string; // Time string
-  medicationDose: number;
-  ateWithinHour: boolean;
-  firstHourFeeling: string; // Clear, Foggy, Anxious, Wired, Other
+  medicationTakenAt String?
+  medicationDose Int?
+  ateWithinHour Boolean?
+  firstHourFeeling String?
   
   // Midday Focus + Emotion
-  focusLevel: number; // 1-10
-  energyLevel: number; // 1-10
-  ruminationLevel: number; // 1-10
-  mainTrigger: string;
-  responseMethod: string[]; // Multiple selections possible
+  focusLevel    Int?      // 1-10
+  energyLevel   Int?      // 1-10
+  ruminationLevel Int?    // 1-10
+  mainTrigger   String?
+  responseMethod String[]
   
   // Afternoon Checkpoint
-  hadTriggeringInteraction: boolean;
-  interactionDetails: string;
-  selfWorthTiedToPerformance: string; // Strongly, Mildly, Not at all
-  overextended: string; // Yes, No, Not sure
+  hadTriggeringInteraction Boolean?
+  interactionDetails String?
+  selfWorthTiedToPerformance String?
+  overextended    String?
   
   // End of Day Reflection
-  overallMood: number; // 1-10
-  medicationEffectiveness: string; // Yes, No, Mixed
-  helpfulFactors: string;
-  distractingFactors: string;
-  thoughtForTomorrow: string;
+  overallMood    Int?     // 1-10
+  medicationEffectiveness String?
+  helpfulFactors String?
+  distractingFactors String?
+  thoughtForTomorrow String?
+  
+  isComplete     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
 }
 
-// Weekly reflection
-interface WeeklyReflection {
-  id?: number;
-  weekStartDate: Date;
-  weekEndDate: Date;
-  averageRuminationScore: number;
-  stableDaysCount: number;
-  medicationEffectiveDays: number;
-  questionedLeavingJob: boolean;
-  weeklyInsight: string;
+model WeeklyReflection {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  user          User      @relation(fields: [userId], references: [id])
+  weekStartDate DateTime
+  weekEndDate   DateTime
+  averageRuminationScore Float?
+  stableDaysCount Int?
+  medicationEffectiveDays Int?
+  questionedLeavingJob Boolean?
+  weeklyInsight String?
+  weekRating    Int?
+  mentalState   String?
+  physicalState String?
+  weekHighlights String?
+  weekChallenges String?
+  lessonsLearned String?
+  nextWeekFocus String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([weekStartDate, weekEndDate])
 }
 ```
 
 ## 3. Component Structure
 
 ```
-/components
-  /layout
-    - Layout.tsx (main layout wrapper)
-    - Header.tsx
-    - Footer.tsx
-    - Navigation.tsx
-  /forms
-    - MorningCheckInForm.tsx
-    - MedicationForm.tsx
-    - MiddayFocusForm.tsx
-    - AfternoonCheckpointForm.tsx
-    - EndOfDayForm.tsx
-    - WeeklyReflectionForm.tsx
-  /ui
-    - Button.tsx
-    - Card.tsx
-    - Input.tsx
-    - Select.tsx
-    - Checkbox.tsx
-    - RadioGroup.tsx
-    - Slider.tsx (for 1-10 ratings)
-    - Modal.tsx
-  /data-display
-    - DailyLogSummary.tsx
-    - WeeklyReflectionSummary.tsx
-    - MoodChart.tsx
-    - FocusChart.tsx
-    - SleepQualityChart.tsx
+/src
+  /app                     # Next.js App Router
+    /api                   # API routes
+      /auth                # Authentication API
+      /daily-logs          # Daily logs API
+      /users               # Users API
+      /weekly-reflections  # Weekly reflections API
+    /daily-log             # Daily log pages
+    /weekly-reflection     # Weekly reflection pages
+    /profile               # User profile page
+    /analytics             # Analytics and insights page
+    /layout.tsx            # Root layout
+    /page.tsx              # Home page
+  /components
+    /common                # Common components
+    /forms                 # Form components
+      /daily-log           # Daily log form components
+        - MorningCheckInForm.tsx
+        - MedicationForm.tsx
+        - MiddayFocusForm.tsx
+        - AfternoonCheckpointForm.tsx
+        - EndOfDayForm.tsx
+      /weekly-reflection   # Weekly reflection form components
+        - WeeklyReflectionForm.tsx
+    /layout                # Layout components
+      - Header.tsx
+      - Footer.tsx
+      - Navigation.tsx
+      - Sidebar.tsx
+    /ui                    # UI components (shadcn/ui)
+      - Button.tsx
+      - Card.tsx
+      - Input.tsx
+      - Select.tsx
+      - Checkbox.tsx
+      - RadioGroup.tsx
+      - Slider.tsx
+      - Dialog.tsx
+      - etc.
+  /lib
+    /auth                  # Authentication utilities
+      - auth-options.ts    # NextAuth.js configuration
+      - AuthContext.tsx    # Authentication context provider
+    /db                    # Database utilities
+      - prisma.ts          # Prisma client initialization
+    /services              # API service functions
+      - api.ts             # Base API utilities
+      - dailyLogService.ts # Daily log service
+      - userService.ts     # User service
+      - weeklyReflectionService.ts # Weekly reflection service
+    /utils                 # Utility functions
+      - date.ts            # Date utilities
+      - validation.ts      # Form validation utilities
+  /types                   # TypeScript type definitions
 ```
 
-## 4. Page Structure
+## 4. Implementation Phases
 
-```
-/pages (or /app with Next.js App Router)
-  - index.tsx (dashboard/home)
-  - daily-log/
-    - new.tsx (create new daily log)
-    - [id].tsx (view/edit specific log)
-    - index.tsx (list all logs)
-  - weekly-reflection/
-    - new.tsx
-    - [id].tsx
-    - index.tsx
-  - insights.tsx (data visualization and patterns)
-  - settings.tsx
-  - export.tsx (data export functionality)
-```
-
-## 5. Implementation Phases
-
-### Phase 1: Project Setup and Core Structure
+### Phase 1: Project Setup and Core Structure ✅
 - Initialize Next.js project with TypeScript
-- Set up Tailwind CSS
-- Configure Dexie.js and define database schema
+- Set up Tailwind CSS and shadcn/ui
 - Create basic layout components
-- Implement routing
+- Implement routing with Next.js App Router
 
-### Phase 2: Daily Log Functionality
+### Phase 2: Authentication System ✅
+- Set up NextAuth.js for authentication
+- Create login and registration pages
+- Implement authentication context
+- Secure API routes with authentication
+
+### Phase 3: Database Integration ✅
+- Set up PostgreSQL database
+- Configure Prisma ORM
+- Define database schema
+- Create database migration
+
+### Phase 4: Daily Log Functionality ✅
+- Create API routes for daily logs
+- Implement service functions for daily log operations
 - Create form components for each section of the daily log
-- Implement data saving with Dexie.js
 - Build daily log list and detail views
 - Add form validation
 
-### Phase 3: Weekly Reflection Functionality
+### Phase 5: Weekly Reflection Functionality ✅
+- Create API routes for weekly reflections
+- Implement service functions for weekly reflection operations
 - Create weekly reflection form
 - Implement automatic calculation of weekly metrics from daily logs
 - Build weekly reflection list and detail views
 
-### Phase 4: Data Visualization and Insights
+### Phase 6: User Profile and Settings ✅
+- Create user profile page
+- Implement user settings (theme, preferences)
+- Add password change functionality
+
+### Phase 7: Data Visualization and Insights 🔄
 - Implement charts for mood, focus, sleep quality trends
 - Create pattern recognition for triggers and helpful factors
 - Build insights dashboard
 
-### Phase 5: Polish and Additional Features
+### Phase 8: Polish and Additional Features 🔄
 - Add data export/import functionality
-- Implement settings (theme, notifications)
-- Add offline sync capabilities
 - Optimize performance
 - Add progressive web app (PWA) capabilities
+- Implement notifications and reminders
 
-## 6. UI/UX Design Principles
+## 5. UI/UX Design with shadcn/ui
 
-- Use a calm, distraction-free color palette
-- Implement progressive disclosure for complex forms
-- Provide immediate feedback on form submissions
-- Use animations sparingly and purposefully
-- Ensure all UI elements are accessible
-- Support both light and dark modes
+We're using shadcn/ui for our UI components, which provides:
+
+- A consistent design system based on Radix UI primitives
+- Accessible components out of the box
+- Customizable components that can be tailored to our needs
+- Dark and light mode support
+- Responsive design
+
+Key UI components include:
+
+- **Form Components**: Input, Select, Checkbox, RadioGroup, Slider
+- **Layout Components**: Card, Dialog, Sheet, Tabs
+- **Feedback Components**: Alert, Toast, Progress
+- **Navigation Components**: Dropdown Menu, Navigation Menu
+
+## 6. API Structure
+
+The API is built using Next.js API routes and follows RESTful principles:
+
+### User Management
+- `GET /api/users/:id`: Get user by ID
+- `PATCH /api/users/:id`: Update user profile
+
+### Daily Logs
+- `POST /api/daily-logs`: Create a new daily log
+- `GET /api/daily-logs`: Get all daily logs for the authenticated user
+- `PUT /api/daily-logs`: Update an existing daily log
+- `DELETE /api/daily-logs?id=:id`: Delete a daily log
+
+### Weekly Reflections
+- `POST /api/weekly-reflections`: Create a new weekly reflection
+- `GET /api/weekly-reflections`: Get all weekly reflections for the authenticated user
+- `PUT /api/weekly-reflections`: Update an existing weekly reflection
+- `DELETE /api/weekly-reflections?id=:id`: Delete a weekly reflection
 
 ## 7. Technical Considerations
 
-### Offline Support
-- All data will be stored locally using IndexedDB via Dexie.js
-- App will function fully without internet connection
-- Optional cloud backup if desired in future versions
+### Authentication and Security
+- JWT-based authentication with NextAuth.js
+- Secure password hashing
+- CSRF protection
+- Input validation and sanitization
 
-### Performance
-- Implement code splitting for faster initial load
-- Optimize component rendering with React.memo and useMemo
-- Use efficient Dexie.js querying patterns
+### Database Performance
+- Indexes on frequently queried fields
+- Efficient query patterns with Prisma
+- Connection pooling for optimal resource usage
+
+### Frontend Performance
+- Server-side rendering with Next.js
+- Optimized component rendering
+- Code splitting for faster initial load
+- Image optimization
 
 ### Accessibility
-- Ensure proper ARIA attributes
-- Maintain keyboard navigation
-- Support screen readers
-- Test with accessibility tools
+- ARIA attributes for interactive elements
+- Keyboard navigation support
+- Screen reader compatibility
+- Sufficient color contrast
 
-### Testing Strategy
-- Unit tests for utility functions
-- Component tests with React Testing Library
-- End-to-end tests with Cypress
+## 8. Current Status and Next Steps
 
-## 8. Timeline and Milestones
+### Completed
+- Project setup and core structure
+- Authentication system
+- Database integration with PostgreSQL
+- Daily log functionality
+- Weekly reflection functionality
+- User profile and settings
 
-1. **Week 1**: Project setup, core structure, database schema
-2. **Week 2**: Daily log form implementation and data storage
-3. **Week 3**: Daily log views and weekly reflection functionality
-4. **Week 4**: Data visualization and insights features
-5. **Week 5**: Polish, testing, and additional features
+### In Progress
+- Data visualization and insights
+- Performance optimization
 
-## 9. Future Enhancements
+### Next Steps
+1. **Analytics Dashboard**: Implement a dashboard to visualize trends and patterns in the user's data
+2. **Data Export/Import**: Add functionality to export data to CSV or JSON format
+3. **Notifications**: Implement reminders for users to complete their daily logs
+4. **Mobile Optimization**: Further optimize the mobile experience
+5. **Offline Support**: Add offline support using service workers
 
-- Cloud synchronization option
-- Notification reminders
-- Pattern analysis with machine learning
-- Integration with health tracking apps
-- Mobile app versions
+## 9. Testing Strategy
 
-## 10. Iterative Testing Strategy
+### Unit Testing
+- Test utility functions
+- Test service functions
+- Test form validation
 
-To ensure robust development, we'll follow an iterative test-driven approach with specific testing checkpoints:
+### Component Testing
+- Test UI components with React Testing Library
+- Test form components
+- Test authentication flows
 
-### Phase 1 Testing: Core Structure
-- Verify Next.js project loads correctly
-- Confirm Tailwind CSS styling works
-- Test dark/light mode toggle functionality
-- Validate responsive layout on different screen sizes
-- Ensure database connection is established
+### Integration Testing
+- Test API routes
+- Test database operations
+- Test authentication system
 
-### Phase 2 Testing: Database Operations
-- Test CRUD operations for daily logs
-- Verify data persistence after page refresh
-- Test database schema validation
-- Confirm proper error handling for database operations
+### End-to-End Testing
+- Test complete user flows
+- Test cross-browser compatibility
+- Test responsive design
 
-### Phase 3 Testing: Daily Log Form
-- Validate form input fields and validation
-- Test multi-step form navigation
-- Verify form state preservation
-- Test form submission and data storage
-- Validate form accessibility
+## 10. Deployment Strategy
 
-### Phase 4 Testing: Weekly Reflection
-- Test automatic calculation of weekly metrics
-- Verify weekly reflection form functionality
-- Validate data aggregation from daily logs
-- Test weekly insights generation
+### Development Environment
+- Local Next.js development server
+- Local PostgreSQL database
+- Environment variables for configuration
 
-### Phase 5 Testing: Data Visualization
-- Verify chart rendering with sample data
-- Test chart updates with new data
-- Validate data filtering functionality
-- Test responsiveness of visualization components
-
-### Phase 6 Testing: Final Application
-- Comprehensive end-to-end testing
-- Performance optimization testing
-- Cross-browser compatibility testing
-- Accessibility compliance testing
-- Offline functionality testing
+### Production Environment
+- Next.js application deployed on Vercel
+- PostgreSQL database hosted on a database service (e.g., Supabase)
+- Environment variables for configuration
+- HTTPS for secure communication
