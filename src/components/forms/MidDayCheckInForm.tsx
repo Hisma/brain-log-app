@@ -11,15 +11,14 @@ import { updateMidDayCheckIn } from '@/lib/services/dailyLogService';
 
 interface MidDayCheckInFormProps {
   initialValues?: {
-    lunch?: string;
-    focusLevel?: number;
-    energyLevel?: number;
-    ruminationLevel?: number;
-    currentActivity?: string;
-    distractions?: string;
-    cravings?: string;
-    mainTrigger?: string;
-    responseMethod?: string[];
+  lunch?: string;
+  focusLevel?: number;
+  energyLevel?: number;
+  ruminationLevel?: number;
+  currentActivity?: string;
+  distractions?: string;
+  mainTrigger?: string;
+  responseMethod?: string[];
   };
   isUpdate?: boolean;
   dailyLogId?: number;
@@ -42,7 +41,6 @@ export function MidDayCheckInForm({
   const [ruminationLevel, setRuminationLevel] = useState(initialValues?.ruminationLevel || 3);
   const [currentActivity, setCurrentActivity] = useState(initialValues?.currentActivity || '');
   const [distractions, setDistractions] = useState(initialValues?.distractions || '');
-  const [cravings, setCravings] = useState(initialValues?.cravings || '');
   const [mainTrigger, setMainTrigger] = useState(initialValues?.mainTrigger || '');
   const [responseMethod, setResponseMethod] = useState<string[]>(initialValues?.responseMethod || ['Redirected attention']);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,7 +57,6 @@ export function MidDayCheckInForm({
         ruminationLevel,
         currentActivity,
         distractions,
-        cravings,
         mainTrigger,
         responseMethod
       };
@@ -109,9 +106,12 @@ export function MidDayCheckInForm({
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Focus Level (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Focus Level (1-10)
+              </label>
+              <span className="text-sm font-medium">{focusLevel}</span>
+            </div>
             <Slider 
               defaultValue={[focusLevel]}
               max={10}
@@ -126,9 +126,12 @@ export function MidDayCheckInForm({
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Energy Level (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Energy Level (1-10)
+              </label>
+              <span className="text-sm font-medium">{energyLevel}</span>
+            </div>
             <Slider 
               defaultValue={[energyLevel]}
               max={10}
@@ -143,9 +146,12 @@ export function MidDayCheckInForm({
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Rumination Level (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Rumination Level (1-10)
+              </label>
+              <span className="text-sm font-medium">{ruminationLevel}</span>
+            </div>
             <Slider 
               defaultValue={[ruminationLevel]}
               max={10}
@@ -181,19 +187,6 @@ export function MidDayCheckInForm({
               value={distractions}
               onChange={(e) => setDistractions(e.target.value)}
               placeholder="What's distracting you right now?"
-              rows={2}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="cravings">
-              Cravings
-            </label>
-            <Textarea 
-              id="cravings"
-              value={cravings}
-              onChange={(e) => setCravings(e.target.value)}
-              placeholder="Any food/substance cravings you're experiencing?"
               rows={2}
             />
           </div>

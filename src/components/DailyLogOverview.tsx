@@ -2,19 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { isSameDay } from '@/lib/utils/timezone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle, Circle, Edit, ChevronRight } from 'lucide-react';
-import { DailyLog, getDailyLogByDate } from '@/lib/services/dailyLogService';
+import { DailyLog, getDailyLogByDate, getDailyLogById, dailyLogService } from '@/lib/services/dailyLogService';
 
 interface DailyLogOverviewProps {
   date: Date;
   userId: number;
   onNavigate: (section: string, isUpdate: boolean) => void;
+  dailyLogId?: number | null;
 }
 
-export function DailyLogOverview({ date, userId, onNavigate }: DailyLogOverviewProps) {
+export function DailyLogOverview({ date, userId, onNavigate, dailyLogId }: DailyLogOverviewProps) {
   const [dailyLog, setDailyLog] = useState<DailyLog | null>(null);
   const [loading, setLoading] = useState(true);
   const [completionPercentage, setCompletionPercentage] = useState(0);
@@ -23,10 +25,21 @@ export function DailyLogOverview({ date, userId, onNavigate }: DailyLogOverviewP
     const fetchDailyLog = async () => {
       setLoading(true);
       try {
-        const log = await getDailyLogByDate(userId, date);
-        setDailyLog(log);
+        let log = null;
         
-        // Calculate completion percentage
+        // If we have a dailyLogId, use it to fetch the log directly
+        if (dailyLogId) {
+          log = await getDailyLogById(userId, dailyLogId);
+        } else {
+          // Otherwise, fetch by date
+          // Use getDailyLogByDate which now uses the improved timezone-aware date comparison
+          log = await getDailyLogByDate(userId, date);
+          
+          // Log for debugging
+          console.log('Fetched log by date:', log ? 'Found' : 'Not found');
+        }
+        
+        // Calculate completion percentage and check if all sections are complete
         if (log) {
           const completedSections = [
             log.morningCompleted,
@@ -37,8 +50,33 @@ export function DailyLogOverview({ date, userId, onNavigate }: DailyLogOverviewP
           ].filter(Boolean).length;
           
           setCompletionPercentage((completedSections / 5) * 100);
+          
+          // Add debug logging for the log date
+          const logDate = new Date(log.date);
+          console.log('Log date:', logDate);
+          console.log('Current date:', date);
+          console.log('Same day check:', isSameDay(logDate, date, 'America/New_York'));
+          
+          // Check if all sections are complete but isComplete is false
+          const allSectionsComplete = completedSections === 5;
+          if (allSectionsComplete && !log.isComplete) {
+            // Update the isComplete status
+            await dailyLogService.checkDailyLogCompletion(userId, log.id);
+            
+            // Fetch the updated log
+            if (dailyLogId) {
+              const updatedLog = await getDailyLogById(userId, dailyLogId);
+              setDailyLog(updatedLog);
+            } else {
+              const updatedLog = await getDailyLogByDate(userId, date);
+              setDailyLog(updatedLog);
+            }
+          } else {
+            setDailyLog(log);
+          }
         } else {
           setCompletionPercentage(0);
+          setDailyLog(null);
         }
       } catch (error) {
         console.error('Error fetching daily log:', error);
@@ -48,7 +86,7 @@ export function DailyLogOverview({ date, userId, onNavigate }: DailyLogOverviewP
     };
     
     fetchDailyLog();
-  }, [date, userId]);
+  }, [date, userId, dailyLogId]);
   
   const sections = [
     {

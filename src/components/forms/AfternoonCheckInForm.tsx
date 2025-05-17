@@ -145,9 +145,12 @@ export function AfternoonCheckInForm({
           )}
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Anxiety Level (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Anxiety Level (1-10)
+              </label>
+              <span className="text-sm font-medium">{anxietyLevel}</span>
+            </div>
             <Slider 
               defaultValue={[anxietyLevel]}
               max={10}

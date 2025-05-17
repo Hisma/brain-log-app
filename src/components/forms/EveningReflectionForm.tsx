@@ -117,9 +117,12 @@ export function EveningReflectionForm({
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Overall Mood Today (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Overall Mood Today (1-10)
+              </label>
+              <span className="text-sm font-medium">{overallMood}</span>
+            </div>
             <Slider 
               defaultValue={[overallMood]}
               max={10}
@@ -134,9 +137,12 @@ export function EveningReflectionForm({
           </div>
         
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Sleepiness Level (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Sleepiness Level (1-10)
+              </label>
+              <span className="text-sm font-medium">{sleepiness}</span>
+            </div>
             <Slider 
               defaultValue={[sleepiness]}
               max={10}
@@ -197,9 +203,12 @@ export function EveningReflectionForm({
           </div>
         
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Rate Your Day (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Rate Your Day (1-10)
+              </label>
+              <span className="text-sm font-medium">{dayRating}</span>
+            </div>
             <Slider 
               defaultValue={[dayRating]}
               max={10}

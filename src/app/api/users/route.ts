@@ -8,7 +8,7 @@ import prisma from '@/lib/prisma';
  */
 export async function POST(request: Request) {
   try {
-    const { username, password, displayName } = await request.json();
+    const { username, password, displayName, timezone } = await request.json();
     
     // Validate input
     if (!username || !password || !displayName) {
@@ -39,7 +39,8 @@ export async function POST(request: Request) {
         username,
         passwordHash,
         displayName,
-        theme: 'system'
+        theme: 'system',
+        timezone: timezone || 'America/New_York'
       }
     });
     

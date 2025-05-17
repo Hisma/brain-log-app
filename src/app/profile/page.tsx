@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { updateUserProfile, updateUserPassword } from '@/lib/services/userService';
 import { useSession } from 'next-auth/react';
+import { TimezoneSelector } from '@/components/timezone-selector';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -178,6 +179,14 @@ export default function ProfilePage() {
             {isUpdating ? 'Updating...' : 'Update Profile'}
           </Button>
         </form>
+      </div>
+      
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Timezone Settings</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Set your timezone to ensure daily logs are created for the correct day.
+        </p>
+        <TimezoneSelector />
       </div>
       
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">

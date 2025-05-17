@@ -12,6 +12,7 @@ import { AfternoonCheckInForm } from '@/components/forms/AfternoonCheckInForm';
 import { EveningReflectionForm } from '@/components/forms/EveningReflectionForm';
 import { dailyLogService, DailyLog } from '@/lib/services/dailyLogService';
 import { formatDate } from '@/lib/utils/index';
+import { formatInTimezone, getCurrentDate, isSameDay } from '@/lib/utils/timezone';
 import { useAuth } from '@/lib/auth/AuthContext';
 import {
   Dialog,
@@ -63,7 +64,6 @@ export default function DailyLogPage() {
     ruminationLevel: 5,
     currentActivity: '',
     distractions: '',
-    cravings: '',
     mainTrigger: '',
     responseMethod: [] as string[],
   });
@@ -116,6 +116,24 @@ export default function DailyLogPage() {
           setIsLoadingLogs(true);
           const logs = await dailyLogService.getRecent(user.id, 10);
           setDailyLogs(logs);
+          
+          // Check if a log already exists for today
+          const logExistsForToday = await dailyLogService.checkLogExistsForToday(user.id, user.timezone);
+          console.log('Log exists for today:', logExistsForToday);
+          
+          if (logExistsForToday) {
+            // Find today's log using the improved isSameDay function
+            const today = getCurrentDate(user.timezone);
+            const todayLog = logs.find(log => 
+              isSameDay(new Date(log.date), today, user.timezone)
+            );
+            
+            if (todayLog) {
+              console.log('Found today\'s log:', todayLog);
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+            }
+          }
         } catch (error) {
           console.error('Error fetching daily logs:', error);
         } finally {
@@ -143,6 +161,24 @@ export default function DailyLogPage() {
     }
   };
 
+  // Check if all sections are completed and redirect if needed
+  const checkAllSectionsCompleted = async () => {
+    if (!dailyLogId || !user) return false;
+    
+    try {
+      const log = await dailyLogService.getDailyLogById(user.id, dailyLogId);
+      if (log && log.isComplete) {
+        // All sections are completed, redirect to home page
+        router.push('/');
+        return true;
+      }
+    } catch (error) {
+      console.error('Error checking log completion status:', error);
+    }
+    
+    return false;
+  };
+
   // Handle form submissions
   const handleMorningSubmit = async (data: typeof morningData) => {
     if (!user) return;
@@ -156,19 +192,100 @@ export default function DailyLogPage() {
       if (isUpdate && dailyLogId) {
         await dailyLogService.updateMorningCheckIn(user.id, dailyLogId, data, true);
       } else {
-        // Create a new daily log
-        const logId = await dailyLogService.createMorningCheckIn(user.id, {
-          date,
-          ...data
-        });
-        setDailyLogId(logId);
+        // Check if a log already exists for today before creating a new one
+        const logExistsForToday = await dailyLogService.checkLogExistsForToday(user.id, user.timezone);
+        
+        if (logExistsForToday) {
+          // If a log exists, get it and set it as the current log
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            setDailyLogId(todayLog.id);
+            setIsUpdate(true);
+            
+            // Now update the existing log
+            await dailyLogService.updateMorningCheckIn(user.id, todayLog.id, data, true);
+          } else {
+            throw new Error('A log already exists for today but could not be retrieved.');
+          }
+        } else {
+          // Create a new daily log
+          const logId = await dailyLogService.createMorningCheckIn(
+            user.id, 
+            {
+              date,
+              ...data
+            },
+            user.timezone
+          );
+          setDailyLogId(logId);
+        }
       }
       
-      // Navigate to the next section or back to overview
-      setCurrentSection('overview');
+      // Check if all sections are completed
+      const isComplete = await checkAllSectionsCompleted();
+      
+      // If not complete, navigate to the overview
+      if (!isComplete) {
+        setCurrentSection('overview');
+      }
     } catch (error) {
       console.error('Error saving morning check-in:', error);
-      alert('Failed to save morning check-in. Please try again.');
+      
+      // Check for specific error messages
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('A log already exists for this date')) {
+        // Try to load the existing log
+        try {
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log
+              const logId = await dailyLogService.createMorningCheckIn(
+                user.id, 
+                {
+                  date,
+                  ...data
+                },
+                user.timezone
+              );
+              setDailyLogId(logId);
+              setIsUpdate(false);
+              setCurrentSection('overview');
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              setCurrentSection('overview');
+            }
+          }
+        } catch (loadError) {
+          console.error('Error handling existing log:', loadError);
+          alert('An error occurred while trying to handle the existing log. Please try again.');
+        }
+      } else {
+        alert('Failed to save morning check-in. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -185,21 +302,118 @@ export default function DailyLogPage() {
       // If we don't have a daily log ID yet, we need to create one first
       let logId = dailyLogId;
       if (!logId) {
-        logId = await dailyLogService.createMorningCheckIn(user.id, {
-          date,
-          ...morningData
-        });
-        setDailyLogId(logId);
+        // Check if a log already exists for today before creating a new one
+        const logExistsForToday = await dailyLogService.checkLogExistsForToday(user.id, user.timezone);
+        
+        if (logExistsForToday) {
+          // If a log exists, get it and set it as the current log
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log with morning data first
+              logId = await dailyLogService.createMorningCheckIn(user.id, {
+                date,
+                ...morningData
+              }, user.timezone);
+              setDailyLogId(logId);
+              setIsUpdate(false);
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              logId = todayLog.id;
+            }
+          } else {
+            throw new Error('A log already exists for today but could not be retrieved.');
+          }
+        } else {
+          // Create a new daily log
+          logId = await dailyLogService.createMorningCheckIn(user.id, {
+            date,
+            ...morningData
+          }, user.timezone);
+          setDailyLogId(logId);
+        }
       }
       
       // Update the medication data
       await dailyLogService.updateConcertaDoseLog(user.id, logId, data, isUpdate);
       
-      // Navigate to the next section or back to overview
-      setCurrentSection('overview');
+      // Check if all sections are completed
+      const isComplete = await checkAllSectionsCompleted();
+      
+      // If not complete, navigate to the overview
+      if (!isComplete) {
+        setCurrentSection('overview');
+      }
     } catch (error) {
       console.error('Error saving medication log:', error);
-      alert('Failed to save medication log. Please try again.');
+      
+      // Check for specific error messages
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('A log already exists for this date')) {
+        // Try to load the existing log
+        try {
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log with morning data first
+              const logId = await dailyLogService.createMorningCheckIn(
+                user.id, 
+                {
+                  date,
+                  ...morningData
+                },
+                user.timezone
+              );
+              setDailyLogId(logId);
+              setIsUpdate(false);
+              setCurrentSection('overview');
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              setCurrentSection('overview');
+            }
+          }
+        } catch (loadError) {
+          console.error('Error handling existing log:', loadError);
+          alert('An error occurred while trying to handle the existing log. Please try again.');
+        }
+      } else {
+        alert('Failed to save medication log. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -216,21 +430,118 @@ export default function DailyLogPage() {
       // If we don't have a daily log ID yet, we need to create one first
       let logId = dailyLogId;
       if (!logId) {
-        logId = await dailyLogService.createMorningCheckIn(user.id, {
-          date,
-          ...morningData
-        });
-        setDailyLogId(logId);
+        // Check if a log already exists for today before creating a new one
+        const logExistsForToday = await dailyLogService.checkLogExistsForToday(user.id, user.timezone);
+        
+        if (logExistsForToday) {
+          // If a log exists, get it and set it as the current log
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log with morning data first
+              logId = await dailyLogService.createMorningCheckIn(user.id, {
+                date,
+                ...morningData
+              }, user.timezone);
+              setDailyLogId(logId);
+              setIsUpdate(false);
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              logId = todayLog.id;
+            }
+          } else {
+            throw new Error('A log already exists for today but could not be retrieved.');
+          }
+        } else {
+          // Create a new daily log
+          logId = await dailyLogService.createMorningCheckIn(user.id, {
+            date,
+            ...morningData
+          }, user.timezone);
+          setDailyLogId(logId);
+        }
       }
       
       // Update the midday data
       await dailyLogService.updateMidDayCheckIn(user.id, logId, data, isUpdate);
       
-      // Navigate to the next section or back to overview
-      setCurrentSection('overview');
+      // Check if all sections are completed
+      const isComplete = await checkAllSectionsCompleted();
+      
+      // If not complete, navigate to the overview
+      if (!isComplete) {
+        setCurrentSection('overview');
+      }
     } catch (error) {
       console.error('Error saving midday check-in:', error);
-      alert('Failed to save midday check-in. Please try again.');
+      
+      // Check for specific error messages
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('A log already exists for this date')) {
+        // Try to load the existing log
+        try {
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log with morning data first
+              const logId = await dailyLogService.createMorningCheckIn(
+                user.id, 
+                {
+                  date,
+                  ...morningData
+                },
+                user.timezone
+              );
+              setDailyLogId(logId);
+              setIsUpdate(false);
+              setCurrentSection('overview');
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              setCurrentSection('overview');
+            }
+          }
+        } catch (loadError) {
+          console.error('Error handling existing log:', loadError);
+          alert('An error occurred while trying to handle the existing log. Please try again.');
+        }
+      } else {
+        alert('Failed to save midday check-in. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -247,21 +558,118 @@ export default function DailyLogPage() {
       // If we don't have a daily log ID yet, we need to create one first
       let logId = dailyLogId;
       if (!logId) {
-        logId = await dailyLogService.createMorningCheckIn(user.id, {
-          date,
-          ...morningData
-        });
-        setDailyLogId(logId);
+        // Check if a log already exists for today before creating a new one
+        const logExistsForToday = await dailyLogService.checkLogExistsForToday(user.id, user.timezone);
+        
+        if (logExistsForToday) {
+          // If a log exists, get it and set it as the current log
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log with morning data first
+              logId = await dailyLogService.createMorningCheckIn(user.id, {
+                date,
+                ...morningData
+              }, user.timezone);
+              setDailyLogId(logId);
+              setIsUpdate(false);
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              logId = todayLog.id;
+            }
+          } else {
+            throw new Error('A log already exists for today but could not be retrieved.');
+          }
+        } else {
+          // Create a new daily log
+          logId = await dailyLogService.createMorningCheckIn(user.id, {
+            date,
+            ...morningData
+          }, user.timezone);
+          setDailyLogId(logId);
+        }
       }
       
       // Update the afternoon data
       await dailyLogService.updateAfternoonCheckIn(user.id, logId, data, isUpdate);
       
-      // Navigate to the next section or back to overview
-      setCurrentSection('overview');
+      // Check if all sections are completed
+      const isComplete = await checkAllSectionsCompleted();
+      
+      // If not complete, navigate to the overview
+      if (!isComplete) {
+        setCurrentSection('overview');
+      }
     } catch (error) {
       console.error('Error saving afternoon check-in:', error);
-      alert('Failed to save afternoon check-in. Please try again.');
+      
+      // Check for specific error messages
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('A log already exists for this date')) {
+        // Try to load the existing log
+        try {
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log with morning data first
+              const logId = await dailyLogService.createMorningCheckIn(
+                user.id, 
+                {
+                  date,
+                  ...morningData
+                },
+                user.timezone
+              );
+              setDailyLogId(logId);
+              setIsUpdate(false);
+              setCurrentSection('overview');
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              setCurrentSection('overview');
+            }
+          }
+        } catch (loadError) {
+          console.error('Error handling existing log:', loadError);
+          alert('An error occurred while trying to handle the existing log. Please try again.');
+        }
+      } else {
+        alert('Failed to save afternoon check-in. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -278,30 +686,124 @@ export default function DailyLogPage() {
       // If we don't have a daily log ID yet, we need to create one first
       let logId = dailyLogId;
       if (!logId) {
-        logId = await dailyLogService.createMorningCheckIn(user.id, {
-          date,
-          ...morningData
-        });
-        setDailyLogId(logId);
+        // Check if a log already exists for today before creating a new one
+        const logExistsForToday = await dailyLogService.checkLogExistsForToday(user.id, user.timezone);
+        
+        if (logExistsForToday) {
+          // If a log exists, get it and set it as the current log
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log with morning data first
+              logId = await dailyLogService.createMorningCheckIn(user.id, {
+                date,
+                ...morningData
+              }, user.timezone);
+              setDailyLogId(logId);
+              setIsUpdate(false);
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              logId = todayLog.id;
+            }
+          } else {
+            throw new Error('A log already exists for today but could not be retrieved.');
+          }
+        } else {
+          // Create a new daily log
+          logId = await dailyLogService.createMorningCheckIn(user.id, {
+            date,
+            ...morningData
+          }, user.timezone);
+          setDailyLogId(logId);
+        }
       }
       
       // Update the evening data
       await dailyLogService.updateEveningReflection(user.id, logId, data, isUpdate);
       
-      // Navigate to the next section or back to overview
-      setCurrentSection('overview');
+      // Check if all sections are completed
+      const isComplete = await checkAllSectionsCompleted();
+      
+      // If not complete, navigate to the overview
+      if (!isComplete) {
+        setCurrentSection('overview');
+      }
     } catch (error) {
       console.error('Error saving evening reflection:', error);
-      alert('Failed to save evening reflection. Please try again.');
+      
+      // Check for specific error messages
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('A log already exists for this date')) {
+        // Try to load the existing log
+        try {
+          const today = getCurrentDate(user.timezone);
+          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const todayLog = logs.find(log => 
+            isSameDay(new Date(log.date), today, user.timezone)
+          );
+          
+          if (todayLog) {
+            // Ask the user if they want to delete the existing log or edit it
+            const shouldDelete = confirm(
+              'You already have a log for today. Would you like to delete it and create a new one?\n\n' +
+              'Click "OK" to delete the existing log and create a new one.\n' +
+              'Click "Cancel" to edit the existing log instead.'
+            );
+            
+            if (shouldDelete) {
+              // Delete the existing log
+              await dailyLogService.deleteDailyLog(user.id, todayLog.id);
+              
+              // Create a new log with morning data first
+              const logId = await dailyLogService.createMorningCheckIn(
+                user.id, 
+                {
+                  date,
+                  ...morningData
+                },
+                user.timezone
+              );
+              setDailyLogId(logId);
+              setIsUpdate(false);
+              setCurrentSection('overview');
+            } else {
+              // Load the existing log for editing
+              setDailyLogId(todayLog.id);
+              setIsUpdate(true);
+              setCurrentSection('overview');
+            }
+          }
+        } catch (loadError) {
+          console.error('Error handling existing log:', loadError);
+          alert('An error occurred while trying to handle the existing log. Please try again.');
+        }
+      } else {
+        alert('Failed to save evening reflection. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleViewLog = async (log: DailyLog) => {
-    setSelectedLog(log);
-    setIsViewModalOpen(true);
-    
     // Load the log data into the form states
     setDailyLogId(log.id);
     
@@ -333,7 +835,6 @@ export default function DailyLogPage() {
       ruminationLevel: log.ruminationLevel || 5,
       currentActivity: log.currentActivity || '',
       distractions: log.distractions || '',
-      cravings: log.cravings || '',
       mainTrigger: log.mainTrigger || '',
       responseMethod: log.responseMethod || [],
     });
@@ -366,6 +867,18 @@ export default function DailyLogPage() {
       gratitude: log.gratitude || '',
       improvements: log.improvements || '',
     });
+    
+    // Check if the log is complete
+    if (log.isComplete) {
+      // If the log is complete, show the popup
+      setSelectedLog(log);
+      setIsViewModalOpen(true);
+    } else {
+      // If the log is not complete, navigate to the daily log overview page
+      setIsCreating(true);
+      setIsUpdate(true);
+      setCurrentSection('overview');
+    }
   };
 
   const handleEditSection = (section: FormSection) => {
@@ -430,7 +943,7 @@ export default function DailyLogPage() {
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-medium">
-                  {formatDate(new Date(log.date), { weekday: 'short', month: 'short', day: 'numeric' })}
+                  {formatInTimezone(new Date(log.date), user?.timezone || 'America/New_York', 'EEE, MMM d')}
                 </h3>
                 {log.isComplete ? (
                   <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
@@ -495,7 +1008,8 @@ export default function DailyLogPage() {
           <DailyLogOverview 
             date={date} 
             userId={user?.id || 1} 
-            onNavigate={handleNavigate} 
+            onNavigate={handleNavigate}
+            dailyLogId={dailyLogId}
           />
         ) : currentSection === 'morning' ? (
           <MorningCheckInForm 
@@ -539,21 +1053,27 @@ export default function DailyLogPage() {
           />
         )}
 
-        {currentSection === 'overview' && (
-          <div className="mt-8 flex justify-between">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsCreating(false);
-                setCurrentSection('overview');
-                setDailyLogId(null);
-                setIsUpdate(false);
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-        )}
+          {currentSection === 'overview' && (
+            <div className="mt-8 flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsCreating(false);
+                  setCurrentSection('overview');
+                  setDailyLogId(null);
+                  setIsUpdate(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => router.push('/')}
+              >
+                Return to Dashboard
+              </Button>
+            </div>
+          )}
       </div>
     );
   };
@@ -713,12 +1233,6 @@ export default function DailyLogPage() {
                   <div className="col-span-2">
                     <p className="text-gray-500 dark:text-gray-400">Distractions</p>
                     <p className="font-medium">{selectedLog.distractions}</p>
-                  </div>
-                )}
-                {selectedLog.cravings && (
-                  <div className="col-span-2">
-                    <p className="text-gray-500 dark:text-gray-400">Cravings</p>
-                    <p className="font-medium">{selectedLog.cravings}</p>
                   </div>
                 )}
                 {selectedLog.mainTrigger && (
@@ -947,9 +1461,13 @@ export default function DailyLogPage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               Recent Logs
             </h2>
-            <Button onClick={() => setIsCreating(true)}>
-              Create New Log
-            </Button>
+            {!dailyLogs.some(log => 
+              isSameDay(new Date(log.date), new Date(), user?.timezone || 'America/New_York')
+            ) && (
+              <Button onClick={() => setIsCreating(true)}>
+                Create New Log
+              </Button>
+            )}
           </div>
           
           {renderLogsList()}

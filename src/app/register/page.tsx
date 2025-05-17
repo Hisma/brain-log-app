@@ -6,14 +6,25 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getCommonTimezones } from '@/lib/utils/timezone';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [timezone, setTimezone] = useState('America/New_York');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  const timezones = getCommonTimezones();
   
   const { register, isAuthenticated } = useAuth();
   const router = useRouter();
@@ -51,7 +62,8 @@ export default function RegisterPage() {
       const success = await register({
         username,
         password,
-        displayName
+        displayName,
+        timezone
       });
       
       if (success) {
@@ -142,6 +154,30 @@ export default function RegisterPage() {
               placeholder="Confirm your password"
               required
             />
+          </div>
+          
+          <div>
+            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Timezone
+            </label>
+            <Select
+              value={timezone}
+              onValueChange={setTimezone}
+            >
+              <SelectTrigger id="timezone" className="mt-1">
+                <SelectValue placeholder="Select your timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                {timezones.map((tz) => (
+                  <SelectItem key={tz.id} value={tz.id}>
+                    {tz.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              Your timezone is used to ensure daily logs are created for the correct day.
+            </p>
           </div>
           
           <Button

@@ -110,9 +110,12 @@ export function MorningCheckInForm({
           </div>
         
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Sleep Quality (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Sleep Quality (1-10)
+              </label>
+              <span className="text-sm font-medium">{sleepQuality}</span>
+            </div>
             <Slider 
               defaultValue={[sleepQuality]}
               max={10}
@@ -140,9 +143,12 @@ export function MorningCheckInForm({
           </div>
         
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Morning Mood (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Morning Mood (1-10)
+              </label>
+              <span className="text-sm font-medium">{morningMood}</span>
+            </div>
             <Slider 
               defaultValue={[morningMood]}
               max={10}

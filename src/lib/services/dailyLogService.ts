@@ -1,6 +1,8 @@
 'use client';
 
 import { get, post, put, del } from '@/lib/services/api';
+import { normalizeDate, isSameDay, getCurrentDate, formatInTimezone } from '@/lib/utils/timezone';
+import { format } from 'date-fns-tz';
 
 // Define the DailyLog type to maintain compatibility with existing code
 export interface DailyLog {
@@ -33,7 +35,6 @@ export interface DailyLog {
   ruminationLevel: number;
   currentActivity?: string;
   distractions?: string;
-  cravings?: string;
   mainTrigger: string;
   responseMethod: string[];
   middayCompleted: boolean;
@@ -95,7 +96,6 @@ export interface MidDayCheckInData {
   ruminationLevel: number;
   currentActivity?: string;
   distractions?: string;
-  cravings?: string;
   mainTrigger?: string;
   responseMethod: string[];
 }
@@ -130,11 +130,18 @@ export interface EveningReflectionData {
 /**
  * Create a new morning check-in entry
  */
-export async function createMorningCheckIn(userId: number, data: MorningCheckInData & { date: Date }) {
+export async function createMorningCheckIn(
+  userId: number, 
+  data: MorningCheckInData & { date: Date },
+  timezone: string = 'America/New_York'
+) {
+  // Normalize the date to midnight in the user's timezone
+  const normalizedDate = normalizeDate(data.date, timezone);
+  
   // Create a new daily log with morning check-in data
   const dailyLog = {
     userId,
-    date: data.date,
+    date: normalizedDate,
     sleepHours: data.sleepHours,
     sleepQuality: data.sleepQuality,
     dreams: data.dreams || '',
@@ -158,7 +165,6 @@ export async function createMorningCheckIn(userId: number, data: MorningCheckInD
     ruminationLevel: 0,
     currentActivity: '',
     distractions: '',
-    cravings: '',
     mainTrigger: '',
     responseMethod: [],
     middayCompleted: false,
@@ -219,10 +225,8 @@ export async function updateMorningCheckIn(userId: number, id: number, data: Mor
   
   await put<DailyLog>('daily-logs', updatedLog);
   
-  // Check if all sections are complete
-  if (!isUpdate) {
-    await checkDailyLogCompletion(userId, id);
-  }
+  // Always check if all sections are complete, regardless of isUpdate
+  await checkDailyLogCompletion(userId, id);
   
   return id;
 }
@@ -251,10 +255,8 @@ export async function updateConcertaDoseLog(userId: number, id: number, data: Co
   
   await put<DailyLog>('daily-logs', updatedLog);
   
-  // Check if all sections are complete
-  if (!isUpdate) {
-    await checkDailyLogCompletion(userId, id);
-  }
+  // Always check if all sections are complete, regardless of isUpdate
+  await checkDailyLogCompletion(userId, id);
   
   return id;
 }
@@ -278,7 +280,6 @@ export async function updateMidDayCheckIn(userId: number, id: number, data: MidD
     ruminationLevel: data.ruminationLevel,
     currentActivity: data.currentActivity || log.currentActivity,
     distractions: data.distractions || log.distractions,
-    cravings: data.cravings || log.cravings,
     mainTrigger: data.mainTrigger || log.mainTrigger,
     responseMethod: data.responseMethod,
     middayCompleted: true
@@ -286,10 +287,8 @@ export async function updateMidDayCheckIn(userId: number, id: number, data: MidD
   
   await put<DailyLog>('daily-logs', updatedLog);
   
-  // Check if all sections are complete
-  if (!isUpdate) {
-    await checkDailyLogCompletion(userId, id);
-  }
+  // Always check if all sections are complete, regardless of isUpdate
+  await checkDailyLogCompletion(userId, id);
   
   return id;
 }
@@ -321,10 +320,8 @@ export async function updateAfternoonCheckIn(userId: number, id: number, data: A
   
   await put<DailyLog>('daily-logs', updatedLog);
   
-  // Check if all sections are complete
-  if (!isUpdate) {
-    await checkDailyLogCompletion(userId, id);
-  }
+  // Always check if all sections are complete, regardless of isUpdate
+  await checkDailyLogCompletion(userId, id);
   
   return id;
 }
@@ -359,10 +356,8 @@ export async function updateEveningReflection(userId: number, id: number, data: 
   
   await put<DailyLog>('daily-logs', updatedLog);
   
-  // Check if all sections are complete
-  if (!isUpdate) {
-    await checkDailyLogCompletion(userId, id);
-  }
+  // Always check if all sections are complete, regardless of isUpdate
+  await checkDailyLogCompletion(userId, id);
   
   return id;
 }
@@ -541,18 +536,32 @@ export async function getDailyLogById(userId: number, id: number) {
 /**
  * Get a daily log by date
  */
-export async function getDailyLogByDate(userId: number, date: Date) {
+export async function getDailyLogByDate(userId: number, date: Date, timezone: string = 'America/New_York') {
   try {
+    // Normalize the date to midnight in the user's timezone
+    const normalizedDate = normalizeDate(date, timezone);
+    
     // Format date as ISO string for the API
-    const dateStr = date.toISOString().split('T')[0];
-    const logs = await get<DailyLog[]>(`daily-logs?date=${dateStr}`);
+    const dateStr = normalizedDate.toISOString().split('T')[0];
+    console.log(`Fetching log for date: ${dateStr} in timezone: ${timezone}`);
     
-    // The API returns an array, but we expect a single log or null
-    if (logs && logs.length > 0) {
-      return logs[0];
-    }
+    // Get all logs and filter by date using isSameDay
+    const allLogs = await get<DailyLog[]>('daily-logs');
     
-    return null;
+    // Find the log that matches the date in the user's timezone
+    const matchingLog = allLogs.find(log => {
+      const logDate = new Date(log.date);
+      const isMatch = isSameDay(logDate, date, timezone);
+      
+      // Log for debugging
+      const logDateStr = format(logDate, 'yyyy-MM-dd', { timeZone: timezone });
+      const dateStr = format(date, 'yyyy-MM-dd', { timeZone: timezone });
+      console.log(`Comparing log date: ${logDateStr} with requested date: ${dateStr}, match: ${isMatch}`);
+      
+      return isMatch;
+    });
+    
+    return matchingLog || null;
   } catch (error) {
     console.error('Error fetching daily log by date:', error);
     return null;
@@ -630,6 +639,38 @@ export async function getRecent(userId: number, limit: number) {
   }
 }
 
+/**
+ * Check if a log exists for the current date
+ */
+export async function checkLogExistsForToday(userId: number, timezone: string = 'America/New_York') {
+  try {
+    // Get the current date in the user's timezone
+    const today = getCurrentDate(timezone);
+    const logs = await getAllDailyLogs(userId);
+    
+    // Format today's date for debugging
+    const todayFormatted = format(today, 'yyyy-MM-dd', { timeZone: timezone });
+    console.log(`Checking for logs on date: ${todayFormatted} in timezone: ${timezone}`);
+    
+    // Check each log to see if it matches today's date in the user's timezone
+    const existingLog = logs.find(log => {
+      const logDate = new Date(log.date);
+      const isSame = isSameDay(logDate, today, timezone);
+      
+      // Log for debugging
+      const logDateFormatted = format(logDate, 'yyyy-MM-dd', { timeZone: timezone });
+      console.log(`Log date: ${logDateFormatted}, matches today: ${isSame}`);
+      
+      return isSame;
+    });
+    
+    return !!existingLog;
+  } catch (error) {
+    console.error('Error checking if log exists for today:', error);
+    return false;
+  }
+}
+
 // Export a service object for compatibility with existing code
 export const dailyLogService = {
   // New methods
@@ -654,5 +695,6 @@ export const dailyLogService = {
   getCompletedDailyLogs,
   deleteDailyLog,
   deleteOrphanedLogs,
-  getRecent
+  getRecent,
+  checkLogExistsForToday
 };

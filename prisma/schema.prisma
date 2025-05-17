@@ -18,6 +18,7 @@ model User {
   displayName  String
   createdAt    DateTime          @default(now())
   lastLogin    DateTime?
+  timezone     String            @default("America/New_York") // User's timezone for date handling
   theme        String            @default("system") // "light", "dark", or "system"
   dailyLogs    DailyLog[]
   weeklyReflections WeeklyReflection[]
@@ -54,7 +55,6 @@ model DailyLog {
   ruminationLevel          Int      @default(0) // Existing field
   currentActivity          String?  // New field
   distractions             String?  // New field
-  cravings                 String?  // New field
   mainTrigger              String?  // Existing field
   responseMethod           String[] @default([]) // Existing field
   middayCompleted          Boolean  @default(false) // New field

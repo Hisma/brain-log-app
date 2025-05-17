@@ -6,6 +6,7 @@ import { Menu, User, LogOut, ChevronDown } from 'lucide-react';
 import { ModeToggle } from '@/components/ui/modetoggle';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { CurrentTime } from '@/components/current-time';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -19,10 +20,13 @@ export function Header() {
     <header className="bg-white dark:bg-gray-800 shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             <Link href="/" className="text-2xl font-bold text-primary-600 dark:text-primary-400">
               Brain Log
             </Link>
+            <div className="hidden md:block">
+              <CurrentTime />
+            </div>
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">
@@ -51,7 +55,7 @@ export function Header() {
                   onClick={toggleUserMenu}
                 >
                   <User className="h-5 w-5" />
-                  <span className="hidden md:inline">{user?.name}</span>
+                  <span className="hidden md:inline">{user?.displayName}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
                 

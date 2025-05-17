@@ -80,9 +80,12 @@ export function WeeklyReflectionForm({
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Rate Your Week (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Rate Your Week (1-10)
+              </label>
+              <span className="text-sm font-medium">{weekRating}</span>
+            </div>
             <Slider 
               defaultValue={[weekRating]}
               max={10}
@@ -198,9 +201,12 @@ export function WeeklyReflectionForm({
           </div>
         
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Average Rumination Score (1-10)
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Average Rumination Score (1-10)
+              </label>
+              <span className="text-sm font-medium">{averageRuminationScore}</span>
+            </div>
             <Slider 
               defaultValue={[averageRuminationScore]}
               max={10}
@@ -215,9 +221,12 @@ export function WeeklyReflectionForm({
           </div>
         
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Number of Stable Days
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Number of Stable Days
+              </label>
+              <span className="text-sm font-medium">{stableDaysCount}</span>
+            </div>
             <Slider 
               defaultValue={[stableDaysCount]}
               max={7}
@@ -232,9 +241,12 @@ export function WeeklyReflectionForm({
           </div>
         
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Days Medication Was Effective
-            </label>
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Days Medication Was Effective
+              </label>
+              <span className="text-sm font-medium">{medicationEffectiveDays}</span>
+            </div>
             <Slider 
               defaultValue={[medicationEffectiveDays]}
               max={7}

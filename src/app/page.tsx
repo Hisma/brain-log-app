@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { dailyLogService, DailyLog } from '@/lib/services/dailyLogService';
 import { weeklyReflectionService, WeeklyReflection } from '@/lib/services/weeklyReflectionService';
 import { formatDate } from '@/lib/utils/index';
+import { isSameDay } from '@/lib/utils/timezone';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 export default function HomePage() {
@@ -41,14 +42,18 @@ export default function HomePage() {
     fetchData();
   }, [user]);
   
-  // Check if today's log exists
+  // Check if today's log exists and if it's complete
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
   const todayLog = recentDailyLogs.find(log => {
+    // Use the isSameDay function for timezone-aware date comparison
     const logDate = new Date(log.date);
-    logDate.setHours(0, 0, 0, 0);
-    return logDate.getTime() === today.getTime();
+    return user && user.timezone 
+      ? isSameDay(logDate, today, user.timezone)
+      : logDate.toDateString() === today.toDateString();
   });
+  
+  // Check if today's log is complete
+  const isTodayLogComplete = todayLog?.isComplete || false;
 
   return (
     <div className="flex flex-col space-y-8 animate-fade-in">
@@ -76,13 +81,19 @@ export default function HomePage() {
               </div>
             </div>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
-              {todayLog 
-                ? "You've already started today's log. Continue where you left off."
-                : "Track your mood, sleep quality, and daily reflections."}
+              {isTodayLogComplete
+                ? "Congrats, today's daily log is complete 🎉! Feel free to review your completed logs."
+                : todayLog 
+                  ? "You've already started today's log. Continue where you left off."
+                  : "Track your mood, sleep quality, and daily reflections."}
             </p>
             <Link href="/daily-log">
               <Button className="w-full">
-                {todayLog ? "Continue Today's Log" : "Start Today's Log"}
+                {isTodayLogComplete
+                  ? "Review Daily Logs"
+                  : todayLog 
+                    ? "Continue Today's Log" 
+                    : "Start Today's Log"}
               </Button>
             </Link>
           </CardContent>

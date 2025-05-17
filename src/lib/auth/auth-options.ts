@@ -48,7 +48,8 @@ export const authOptions: NextAuthOptions = {
             name: user.displayName,
             email: user.username,
             username: user.username, // Explicitly include username
-            theme: user.theme
+            theme: user.theme,
+            timezone: user.timezone // Include timezone
           };
         } catch (error) {
           console.error('Authentication error:', error);
@@ -68,6 +69,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.theme = user.theme;
         token.username = user.username || user.email || ''; // Use username directly if available, fallback to email
+        token.timezone = user.timezone || 'America/New_York'; // Include timezone with default
       }
       
       // Handle updates to the session
@@ -79,6 +81,9 @@ export const authOptions: NextAuthOptions = {
         if (session.user?.theme) {
           token.theme = session.user.theme;
         }
+        if (session.user?.timezone) {
+          token.timezone = session.user.timezone;
+        }
       }
       
       return token;
@@ -88,6 +93,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = parseInt(token.id as string);
         session.user.theme = token.theme as string;
         session.user.username = token.username as string; // Add username to session
+        session.user.timezone = token.timezone as string; // Add timezone to session
         
         // Ensure name is synchronized with the token
         if (token.name) {
@@ -134,6 +140,7 @@ declare module 'next-auth' {
     id: string;
     theme: string;
     username?: string; // Add username to User type
+    timezone: string; // Add timezone to User type
   }
   
   interface Session {
@@ -144,6 +151,7 @@ declare module 'next-auth' {
       email?: string | null;
       image?: string | null;
       username: string; // Add username to session type
+      timezone: string; // Add timezone to session type
     };
   }
 }
@@ -153,5 +161,6 @@ declare module 'next-auth/jwt' {
     id: string;
     theme: string;
     username: string; // Add username to JWT type
+    timezone: string; // Add timezone to JWT type
   }
 }

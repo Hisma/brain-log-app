@@ -4,14 +4,24 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
+// Define the User type
+export interface User {
+  id: number;
+  username: string;
+  displayName: string;
+  theme?: string;
+  timezone: string;
+}
+
 // Define the shape of our authentication context
 interface AuthContextType {
-  user: any | null;
+  user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   register: (userData: UserRegistrationData) => Promise<boolean>;
+  updateUserTimezone: (timezone: string) => Promise<boolean>;
 }
 
 // Data needed for user registration
@@ -19,6 +29,7 @@ export interface UserRegistrationData {
   username: string;
   password: string;
   displayName: string;
+  timezone?: string;
 }
 
 // Create the context with a default value
@@ -29,6 +40,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   logout: () => {},
   register: async () => false,
+  updateUserTimezone: async () => false,
 });
 
 // Custom hook to use the auth context
@@ -81,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: userData.username,
           password: userData.password,
           displayName: userData.displayName,
+          timezone: userData.timezone || 'America/New_York', // Default timezone if not provided
         }),
       });
       
@@ -98,18 +111,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Update user timezone
+  const updateUserTimezone = async (timezone: string): Promise<boolean> => {
+    if (!session?.user?.id) return false;
+    
+    try {
+      const response = await fetch('/api/users/timezone', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ timezone }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Timezone update failed:', errorData);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Timezone update error:', error);
+      return false;
+    }
+  };
+
   // Create the context value with proper mapping for displayName and username
   const value = {
     user: session?.user ? {
       ...session.user,
       displayName: session.user.name || '', // Map NextAuth's name to our displayName
-      username: session.user.email || '' // Map NextAuth's email to our username
+      username: session.user.email || '', // Map NextAuth's email to our username
+      timezone: session.user.timezone || 'America/New_York', // Default timezone if not provided
     } : null,
     isAuthenticated: !!session?.user,
     isLoading: status === 'loading',
     login,
     logout,
-    register
+    register,
+    updateUserTimezone
   };
 
   return (
