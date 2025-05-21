@@ -6,6 +6,8 @@ import { Footer } from './Footer';
 import { ThemeProvider } from '@/lib/utils/ThemeProvider';
 import { SessionProvider } from 'next-auth/react';
 import { AuthProvider } from '@/lib/auth/AuthContext';
+import { SessionExpiredAlert } from '@/components/ui/session-expired-alert';
+import { Toaster } from '@/components/ui/sonner';
 
 interface LayoutProps {
   children: ReactNode;
@@ -22,6 +24,8 @@ export function Layout({ children }: LayoutProps) {
               {children}
             </main>
             <Footer />
+            <SessionExpiredAlert />
+            <Toaster />
           </div>
         </AuthProvider>
       </SessionProvider>

@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth/auth-options';
 export async function GET() {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user || session.user.email !== 'admin') {
       return NextResponse.json(

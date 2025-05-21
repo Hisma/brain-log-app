@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
 import { updateEveningReflection } from '@/lib/services/dailyLogService';
 
 interface EveningReflectionFormProps {
@@ -24,6 +25,9 @@ interface EveningReflectionFormProps {
     challenges?: string;
     gratitude?: string;
     improvements?: string;
+    metPhysicalActivityGoals?: boolean;
+    metDietaryGoals?: boolean;
+    neverFeltIsolated?: boolean;
   };
   isUpdate?: boolean;
   dailyLogId?: number;
@@ -53,6 +57,9 @@ export function EveningReflectionForm({
   const [challenges, setChallenges] = useState(initialValues?.challenges || '');
   const [gratitude, setGratitude] = useState(initialValues?.gratitude || '');
   const [improvements, setImprovements] = useState(initialValues?.improvements || '');
+  const [metPhysicalActivityGoals, setMetPhysicalActivityGoals] = useState(initialValues?.metPhysicalActivityGoals || false);
+  const [metDietaryGoals, setMetDietaryGoals] = useState(initialValues?.metDietaryGoals || false);
+  const [neverFeltIsolated, setNeverFeltIsolated] = useState(initialValues?.neverFeltIsolated || false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,7 +80,10 @@ export function EveningReflectionForm({
         accomplishments,
         challenges,
         gratitude,
-        improvements
+        improvements,
+        metPhysicalActivityGoals,
+        metDietaryGoals,
+        neverFeltIsolated
       };
       
       // Get the user ID from the session
@@ -115,7 +125,38 @@ export function EveningReflectionForm({
               placeholder="What did you eat for dinner?"
             />
           </div>
+          <div className="flex items-center space-x-2 py-2">
+            <Checkbox
+              id="metPhysicalActivityGoals"
+              checked={metPhysicalActivityGoals}
+              onCheckedChange={(checked) => setMetPhysicalActivityGoals(checked as boolean)}
+            />
+            <label htmlFor="metPhysicalActivityGoals" className="text-sm font-medium">
+              I met my physical activity goals today
+            </label>
+          </div>
           
+          <div className="flex items-center space-x-2 py-2">
+            <Checkbox
+              id="metDietaryGoals"
+              checked={metDietaryGoals}
+              onCheckedChange={(checked) => setMetDietaryGoals(checked as boolean)}
+            />
+            <label htmlFor="metDietaryGoals" className="text-sm font-medium">
+              I met my dietary goals today
+            </label>
+          </div>
+          
+          <div className="flex items-center space-x-2 py-2">
+            <Checkbox
+              id="neverFeltIsolated"
+              checked={neverFeltIsolated}
+              onCheckedChange={(checked) => setNeverFeltIsolated(checked as boolean)}
+            />
+            <label htmlFor="neverFeltIsolated" className="text-sm font-medium">
+              I never felt excessively isolated today
+            </label>
+          </div>
           <div className="space-y-2">
             <div className="flex justify-between">
               <label className="text-sm font-medium">

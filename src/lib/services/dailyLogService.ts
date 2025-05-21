@@ -35,8 +35,9 @@ export interface DailyLog {
   ruminationLevel: number;
   currentActivity?: string;
   distractions?: string;
-  mainTrigger: string;
-  responseMethod: string[];
+  hadEmotionalEvent: boolean;
+  emotionalEvent: string;
+  copingStrategies: string;
   middayCompleted: boolean;
   
   // Afternoon check-in fields (3-5pm)
@@ -59,6 +60,9 @@ export interface DailyLog {
   helpfulFactors: string;
   distractingFactors: string;
   thoughtForTomorrow: string;
+  metPhysicalActivityGoals: boolean;
+  metDietaryGoals: boolean;
+  neverFeltIsolated: boolean;
   eveningCompleted: boolean;
   
   // Additional fields
@@ -96,8 +100,9 @@ export interface MidDayCheckInData {
   ruminationLevel: number;
   currentActivity?: string;
   distractions?: string;
-  mainTrigger?: string;
-  responseMethod: string[];
+  hadEmotionalEvent?: boolean;
+  emotionalEvent?: string;
+  copingStrategies?: string;
 }
 
 export interface AfternoonCheckInData {
@@ -125,6 +130,9 @@ export interface EveningReflectionData {
   challenges?: string;
   gratitude?: string;
   improvements?: string;
+  metPhysicalActivityGoals?: boolean;
+  metDietaryGoals?: boolean;
+  neverFeltIsolated?: boolean;
 }
 
 /**
@@ -165,8 +173,9 @@ export async function createMorningCheckIn(
     ruminationLevel: 0,
     currentActivity: '',
     distractions: '',
-    mainTrigger: '',
-    responseMethod: [],
+    hadEmotionalEvent: false,
+    emotionalEvent: '',
+    copingStrategies: '',
     middayCompleted: false,
     
     afternoonSnack: '',
@@ -187,6 +196,9 @@ export async function createMorningCheckIn(
     helpfulFactors: '',
     distractingFactors: '',
     thoughtForTomorrow: '',
+    metPhysicalActivityGoals: false,
+    metDietaryGoals: false,
+    neverFeltIsolated: false,
     eveningCompleted: false,
     
     isComplete: false,
@@ -280,8 +292,9 @@ export async function updateMidDayCheckIn(userId: number, id: number, data: MidD
     ruminationLevel: data.ruminationLevel,
     currentActivity: data.currentActivity || log.currentActivity,
     distractions: data.distractions || log.distractions,
-    mainTrigger: data.mainTrigger || log.mainTrigger,
-    responseMethod: data.responseMethod,
+    hadEmotionalEvent: data.hadEmotionalEvent !== undefined ? data.hadEmotionalEvent : log.hadEmotionalEvent,
+    emotionalEvent: data.emotionalEvent || log.emotionalEvent,
+    copingStrategies: data.copingStrategies || log.copingStrategies,
     middayCompleted: true
   };
   
@@ -351,6 +364,9 @@ export async function updateEveningReflection(userId: number, id: number, data: 
     challenges: data.challenges || log.challenges,
     gratitude: data.gratitude || log.gratitude,
     improvements: data.improvements || log.improvements,
+    metPhysicalActivityGoals: data.metPhysicalActivityGoals !== undefined ? data.metPhysicalActivityGoals : log.metPhysicalActivityGoals,
+    metDietaryGoals: data.metDietaryGoals !== undefined ? data.metDietaryGoals : log.metDietaryGoals,
+    neverFeltIsolated: data.neverFeltIsolated !== undefined ? data.neverFeltIsolated : log.neverFeltIsolated,
     eveningCompleted: true
   };
   
@@ -442,8 +458,9 @@ export async function updateMiddayFocusEmotion(userId: number, id: number, data:
     focusLevel: data.focusLevel,
     energyLevel: data.energyLevel,
     ruminationLevel: data.ruminationLevel,
-    mainTrigger: data.mainTrigger,
-    responseMethod: data.responseMethod
+    hadEmotionalEvent: data.mainTrigger ? true : false,
+    emotionalEvent: data.mainTrigger || '',
+    copingStrategies: data.responseMethod ? data.responseMethod.join(', ') : ''
   };
   
   return updateMidDayCheckIn(userId, id, midDayData);
@@ -519,11 +536,11 @@ export async function updateEndOfDayReflection(userId: number, id: number, data:
  */
 export async function getDailyLogById(userId: number, id: number) {
   try {
-    const logs = await get<DailyLog[]>(`daily-logs?id=${id}`);
+    const response = await get<{ dailyLogs: DailyLog[] }>(`daily-logs?id=${id}`);
     
     // The API returns an array, but we expect a single log or null
-    if (logs && logs.length > 0 && logs[0].userId === userId) {
-      return logs[0];
+    if (response.dailyLogs && response.dailyLogs.length > 0 && response.dailyLogs[0].userId === userId) {
+      return response.dailyLogs[0];
     }
     
     return null;
@@ -546,10 +563,10 @@ export async function getDailyLogByDate(userId: number, date: Date, timezone: st
     console.log(`Fetching log for date: ${dateStr} in timezone: ${timezone}`);
     
     // Get all logs and filter by date using isSameDay
-    const allLogs = await get<DailyLog[]>('daily-logs');
+    const response = await get<{ dailyLogs: DailyLog[] }>('daily-logs');
     
     // Find the log that matches the date in the user's timezone
-    const matchingLog = allLogs.find(log => {
+    const matchingLog = response.dailyLogs.find(log => {
       const logDate = new Date(log.date);
       const isMatch = isSameDay(logDate, date, timezone);
       
@@ -573,7 +590,8 @@ export async function getDailyLogByDate(userId: number, date: Date, timezone: st
  */
 export async function getAllDailyLogs(userId: number) {
   try {
-    return await get<DailyLog[]>('daily-logs');
+    const response = await get<{ dailyLogs: DailyLog[] }>('daily-logs');
+    return response.dailyLogs;
   } catch (error) {
     console.error('Error fetching all daily logs:', error);
     return [];
@@ -585,8 +603,8 @@ export async function getAllDailyLogs(userId: number) {
  */
 export async function getCompletedDailyLogs(userId: number) {
   try {
-    const logs = await get<DailyLog[]>('daily-logs');
-    return logs.filter(log => log.isComplete === true);
+    const response = await get<{ dailyLogs: DailyLog[] }>('daily-logs');
+    return response.dailyLogs.filter(log => log.isComplete === true);
   } catch (error) {
     console.error('Error fetching completed daily logs:', error);
     return [];
@@ -627,10 +645,10 @@ export async function deleteOrphanedLogs() {
  */
 export async function getRecent(userId: number, limit: number) {
   try {
-    const logs = await get<DailyLog[]>('daily-logs');
+    const response = await get<{ dailyLogs: DailyLog[] }>('daily-logs');
     
     // Sort by date in descending order and take the first 'limit' logs
-    return logs
+    return response.dailyLogs
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, limit);
   } catch (error) {

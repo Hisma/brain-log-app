@@ -2,18 +2,45 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Menu, User, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, User, LogOut, ChevronDown, RefreshCw } from 'lucide-react';
 import { ModeToggle } from '@/components/ui/modetoggle';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { CurrentTime } from '@/components/current-time';
+import { forceRefresh } from '@/lib/utils/refresh';
+import { useRefreshCleanup } from '@/lib/hooks/useRefreshCleanup';
+import { toast } from 'sonner';
 
 export function Header() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, refreshSession } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Use the refresh cleanup hook
+  useRefreshCleanup();
   
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
+  };
+  
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    
+    try {
+      // First try to refresh the session
+      const success = await refreshSession();
+      
+      if (success) {
+        toast.success('Session refreshed successfully');
+      }
+      
+      // Then force a page refresh
+      forceRefresh();
+    } catch (error) {
+      console.error('Error refreshing:', error);
+      // Force a page refresh anyway
+      forceRefresh();
+    }
   };
   
   return (
@@ -40,11 +67,24 @@ export function Header() {
               Weekly Reflections
             </Link>
             <Link href="/insights" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
-              Insights
+              Daily Insights
+            </Link>
+            <Link href="/weekly-insights" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
+              Weekly Insights
             </Link>
           </nav>
           
           <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Refresh page and session"
+              aria-label="Refresh page and session"
+            >
+              <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
             <ModeToggle />
             
             {isAuthenticated ? (

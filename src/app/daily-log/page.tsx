@@ -24,7 +24,8 @@ import {
   DialogTrigger,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Edit, ArrowLeft } from 'lucide-react';
+import { Edit, ArrowLeft, Lightbulb } from 'lucide-react';
+import { InsightButton } from '@/components/ui/insight-button';
 
 // Define the possible form sections
 type FormSection = 'overview' | 'morning' | 'medication' | 'midday' | 'afternoon' | 'evening';
@@ -1422,6 +1423,11 @@ export default function DailyLogPage() {
             >
               Delete
             </Button>
+            <InsightButton 
+              dailyLogId={selectedLog.id} 
+              isComplete={selectedLog.isComplete} 
+              className="mr-2"
+            />
             <DialogClose asChild>
               <Button variant="outline">Close</Button>
             </DialogClose>

@@ -1,231 +1,258 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { dailyLogService, DailyLog } from "@/lib/services/dailyLogService";
-import { weeklyReflectionService, WeeklyReflection } from "@/lib/services/weeklyReflectionService";
-import { MoodTrendChart, prepareMoodTrendData } from "@/components/charts/MoodTrendChart";
-import { SleepQualityChart, prepareSleepQualityData } from "@/components/charts/SleepQualityChart";
-import { FocusEnergyChart, prepareFocusEnergyData } from "@/components/charts/FocusEnergyChart";
-import { WeeklyInsightsChart, prepareWeeklyInsightsData } from "@/components/charts/WeeklyInsightsChart";
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { DailyInsightCard } from '@/components/ui/daily-insight-card';
+
+interface DailyLog {
+  id: number;
+  date: string;
+  isComplete: boolean;
+}
+
+interface Insight {
+  id: number;
+  dailyLogId: number;
+  insightText: string;
+  createdAt: string;
+  dailyLog: {
+    date: string;
+  };
+}
 
 export default function InsightsPage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([]);
-  const [weeklyReflections, setWeeklyReflections] = useState<WeeklyReflection[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  
-  // Redirect if not authenticated
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [selectedLogId, setSelectedLogId] = useState<string>('');
+  const [currentInsight, setCurrentInsight] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+
+  // Fetch daily logs
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, isLoading, router]);
-  
-  // Fetch data from the API
-  useEffect(() => {
-    async function fetchData() {
-      if (user) {
-        try {
-          setIsLoadingData(true);
-          const [logs, reflections] = await Promise.all([
-            dailyLogService.getAllDailyLogs(user.id),
-            weeklyReflectionService.getAllWeeklyReflections(user.id)
-          ]);
-          
-          setDailyLogs(logs);
-          setWeeklyReflections(reflections);
-        } catch (error) {
-          console.error('Error fetching data:', error);
-        } finally {
-          setIsLoadingData(false);
+    const fetchDailyLogs = async () => {
+      try {
+        const response = await fetch('/api/daily-logs');
+        if (!response.ok) {
+          throw new Error('Failed to fetch daily logs');
         }
+        const data = await response.json();
+        // Sort by date (newest first) and filter for completed logs
+        const sortedLogs = data.dailyLogs
+          .filter((log: DailyLog) => log.isComplete)
+          .sort((a: DailyLog, b: DailyLog) => 
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+        setDailyLogs(sortedLogs);
+        
+        // If there are logs, select the most recent one by default
+        if (sortedLogs.length > 0) {
+          setSelectedLogId(sortedLogs[0].id.toString());
+        }
+      } catch (error) {
+        console.error('Error fetching daily logs:', error);
+        setError('Failed to load daily logs. Please try again later.');
       }
-    }
-    
-    fetchData();
-  }, [user]);
+    };
 
-  // Prepare data for charts
-  const moodTrendData = prepareMoodTrendData(dailyLogs || []);
-  const sleepQualityData = prepareSleepQualityData(dailyLogs || []);
-  const focusEnergyData = prepareFocusEnergyData(dailyLogs || []);
-  
-  // Get the most recent weekly reflection
-  const [latestWeeklyReflection, setLatestWeeklyReflection] = useState<{
-    chartData: Array<{ category: string; value: number }>;
-    weekStartDate: string;
-  }>({ chartData: [], weekStartDate: "" });
+    fetchDailyLogs();
+  }, []);
 
+  // Fetch insights
   useEffect(() => {
-    if (weeklyReflections && weeklyReflections.length > 0) {
-      // Sort by date descending to get the most recent
-      const sortedReflections = [...weeklyReflections].sort((a, b) => {
-        return new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime();
+    const fetchInsights = async () => {
+      try {
+        const response = await fetch('/api/insights');
+        if (!response.ok) {
+          throw new Error('Failed to fetch insights');
+        }
+        const data = await response.json();
+        setInsights(data.insights || []);
+      } catch (error) {
+        console.error('Error fetching insights:', error);
+        setError('Failed to load insights. Please try again later.');
+      }
+    };
+
+    fetchInsights();
+  }, []);
+
+  // Fetch insight for selected log
+  useEffect(() => {
+    if (!selectedLogId) return;
+
+    const fetchInsight = async () => {
+      setIsLoading(true);
+      setCurrentInsight('');
+      try {
+        const response = await fetch(`/api/insights?dailyLogId=${selectedLogId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch insight');
+        }
+        const data = await response.json();
+        setCurrentInsight(data.insightText || '');
+      } catch (error) {
+        console.error('Error fetching insight:', error);
+        setError('Failed to load insight. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInsight();
+  }, [selectedLogId]);
+
+  // Generate insight for selected log
+  const handleGenerateInsight = async () => {
+    if (!selectedLogId) return;
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ dailyLogId: parseInt(selectedLogId) }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate insight');
+      }
+
+      const data = await response.json();
+      setCurrentInsight(data.insightText);
       
-      const latestReflection = sortedReflections[0];
-      setLatestWeeklyReflection(prepareWeeklyInsightsData(latestReflection));
+      // Refresh insights list
+      const insightsResponse = await fetch('/api/insights');
+      if (insightsResponse.ok) {
+        const insightsData = await insightsResponse.json();
+        setInsights(insightsData.insights || []);
+      }
+    } catch (error) {
+      console.error('Error generating insight:', error);
+      setError('Failed to generate insight. Please try again later.');
+    } finally {
+      setIsLoading(false);
     }
-  }, [weeklyReflections]);
+  };
+
+  // Find the selected daily log
+  const selectedLog = dailyLogs.find(log => log.id.toString() === selectedLogId);
 
   return (
-    <div className="container mx-auto py-8 animate-fade-in">
-      <h1 className="text-3xl font-bold mb-8">Insights Dashboard</h1>
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-6">Daily AI Insights</h1>
       
-      {isLoadingData ? (
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-          Loading data...
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          {error}
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Mood Trend Chart */}
-            <div className="bg-card p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Mood Trends</h2>
-              {moodTrendData.length > 0 ? (
-                <MoodTrendChart data={moodTrendData} />
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  No mood data available yet
-                </div>
-              )}
-            </div>
-            
-            {/* Sleep Quality Chart */}
-            <div className="bg-card p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Sleep Quality</h2>
-              {sleepQualityData.length > 0 ? (
-                <SleepQualityChart data={sleepQualityData} />
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  No sleep data available yet
-                </div>
-              )}
-            </div>
-            
-            {/* Focus and Energy Chart */}
-            <div className="bg-card p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Focus, Energy & Rumination</h2>
-              {focusEnergyData.length > 0 ? (
-                <FocusEnergyChart data={focusEnergyData} />
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  No focus/energy data available yet
-                </div>
-              )}
-            </div>
-            
-            {/* Weekly Insights Chart */}
-            <div className="bg-card p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Weekly Insights</h2>
-              {latestWeeklyReflection.chartData.length > 0 ? (
-                <WeeklyInsightsChart 
-                  data={latestWeeklyReflection.chartData} 
-                  weekStartDate={latestWeeklyReflection.weekStartDate} 
-                />
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  No weekly reflection data available yet
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-8 bg-card p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Insights & Patterns</h2>
-            <div className="space-y-4">
-              {dailyLogs && dailyLogs.length > 0 ? (
-                <>
-                  <div>
-                    <h3 className="text-lg font-medium">Sleep Impact</h3>
-                    <p className="text-muted-foreground">
-                      {calculateSleepInsight(dailyLogs)}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium">Mood Patterns</h3>
-                    <p className="text-muted-foreground">
-                      {calculateMoodInsight(dailyLogs)}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium">Rumination Triggers</h3>
-                    <p className="text-muted-foreground">
-                      {calculateRuminationInsight(dailyLogs)}
-                    </p>
-                  </div>
-                </>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left sidebar - Daily log selector */}
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Daily Log</CardTitle>
+              <CardDescription>
+                Choose a completed daily log to view AI insights
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {dailyLogs.length > 0 ? (
+                <Select
+                  value={selectedLogId}
+                  onValueChange={setSelectedLogId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a daily log" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dailyLogs.map((log) => (
+                      <SelectItem key={log.id} value={log.id.toString()}>
+                        {format(new Date(log.date), 'MMM d, yyyy')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               ) : (
                 <p className="text-muted-foreground">
-                  Add more daily logs to see insights and patterns
+                  No completed daily logs found. Complete a daily log to generate insights.
                 </p>
               )}
-            </div>
+              
+              <div className="mt-6">
+                <h3 className="font-medium mb-2">Recent Insights</h3>
+                {insights.length > 0 ? (
+                  <ul className="space-y-2">
+                    {insights.slice(0, 5).map((insight) => (
+                      <li key={insight.id}>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-left"
+                          onClick={() => setSelectedLogId(insight.dailyLogId.toString())}
+                        >
+                          {format(new Date(insight.dailyLog.date), 'MMM d, yyyy')}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No insights generated yet.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Main content - Insight display */}
+        <div className="md:col-span-2">
+          {selectedLog ? (
+            <DailyInsightCard
+              dailyLogId={parseInt(selectedLogId)}
+              date={new Date(selectedLog.date)}
+              insightText={currentInsight}
+              onGenerateInsight={handleGenerateInsight}
+              isLoading={isLoading}
+            />
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <p className="text-muted-foreground">
+                  Select a daily log to view or generate insights.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold mb-4">About AI Insights</h2>
+            <Card>
+              <CardContent className="py-6">
+                <p className="mb-4">
+                  AI Insights analyzes your daily log data to provide personalized observations, patterns, and recommendations.
+                </p>
+                <p className="mb-4">
+                  The AI looks for connections between your sleep, medication, mood, and productivity to help you understand what factors influence your well-being.
+                </p>
+                <p>
+                  Insights are generated using advanced AI technology and are meant to complement your own self-reflection, not replace professional medical advice.
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
-}
-
-// Helper functions to calculate insights
-function calculateSleepInsight(dailyLogs: any[] | undefined | null) {
-  if (!dailyLogs || dailyLogs.length < 3) {
-    return "Not enough data to analyze sleep patterns yet.";
-  }
-  
-  // Simple analysis of sleep quality vs mood
-  const goodSleepDays = dailyLogs.filter(log => log.sleepQuality >= 7);
-  const badSleepDays = dailyLogs.filter(log => log.sleepQuality < 5);
-  
-  const goodSleepMoodAvg = goodSleepDays.reduce((sum, log) => sum + (log.morningMood || 0), 0) / (goodSleepDays.length || 1);
-  const badSleepMoodAvg = badSleepDays.reduce((sum, log) => sum + (log.morningMood || 0), 0) / (badSleepDays.length || 1);
-  
-  if (goodSleepMoodAvg - badSleepMoodAvg > 2) {
-    return "There appears to be a strong correlation between your sleep quality and morning mood. Days with good sleep (7+ rating) show significantly better morning mood scores.";
-  } else if (goodSleepMoodAvg - badSleepMoodAvg > 0) {
-    return "There appears to be a moderate correlation between your sleep quality and morning mood. Better sleep generally leads to slightly improved mood.";
-  } else {
-    return "Your mood doesn't seem to be strongly affected by sleep quality based on current data.";
-  }
-}
-
-function calculateMoodInsight(dailyLogs: any[] | undefined | null) {
-  if (!dailyLogs || dailyLogs.length < 5) {
-    return "Not enough data to analyze mood patterns yet.";
-  }
-  
-  // Check for morning vs evening mood patterns
-  const morningHigherCount = dailyLogs.filter(log => (log.morningMood || 0) > (log.overallMood || 0)).length;
-  const eveningHigherCount = dailyLogs.filter(log => (log.overallMood || 0) > (log.morningMood || 0)).length;
-  
-  if (morningHigherCount > eveningHigherCount * 1.5) {
-    return "You tend to start the day with higher mood that decreases throughout the day. Consider adding more positive activities in the afternoon.";
-  } else if (eveningHigherCount > morningHigherCount * 1.5) {
-    return "Your mood typically improves throughout the day. Morning routines that boost your mood might be helpful.";
-  } else {
-    return "Your mood appears relatively stable throughout the day without strong morning or evening patterns.";
-  }
-}
-
-function calculateRuminationInsight(dailyLogs: any[] | undefined | null) {
-  if (!dailyLogs || dailyLogs.length < 5) {
-    return "Not enough data to analyze rumination patterns yet.";
-  }
-  
-  // Simple analysis of rumination triggers
-  const highRuminationDays = dailyLogs.filter(log => log.ruminationLevel >= 7);
-  
-  if (highRuminationDays.length >= dailyLogs.length * 0.4) {
-    return "You've experienced high rumination (7+ rating) on " + 
-      Math.round(highRuminationDays.length / dailyLogs.length * 100) + 
-      "% of recorded days. Consider discussing rumination management strategies with your healthcare provider.";
-  } else if (highRuminationDays.length > 0) {
-    return "You occasionally experience high rumination days. Check your logs for potential triggers on those days.";
-  } else {
-    return "Your rumination levels appear to be generally well-managed based on current data.";
-  }
 }

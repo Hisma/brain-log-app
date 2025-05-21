@@ -10,7 +10,7 @@ import prisma from '@/lib/prisma';
 export async function PUT(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(

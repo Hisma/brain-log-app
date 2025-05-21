@@ -27,16 +27,14 @@ export function WeeklyReflectionForm({
   const weekEndDate = endDate;
   const [weekRating, setWeekRating] = useState(5);
   const [mentalState, setMentalState] = useState('');
-  const [physicalState, setPhysicalState] = useState('');
   const [weekHighlights, setWeekHighlights] = useState('');
   const [weekChallenges, setWeekChallenges] = useState('');
   const [lessonsLearned, setLessonsLearned] = useState('');
   const [nextWeekFocus, setNextWeekFocus] = useState('');
-  const [averageRuminationScore, setAverageRuminationScore] = useState(5);
-  const [stableDaysCount, setStableDaysCount] = useState(0);
-  const [medicationEffectiveDays, setMedicationEffectiveDays] = useState(0);
   const [questionedLeavingJob, setQuestionedLeavingJob] = useState(false);
-  const [weeklyInsight, setWeeklyInsight] = useState('');
+  const [gymDaysCount, setGymDaysCount] = useState(0);
+  const [dietRating, setDietRating] = useState(5);
+  const [memorableFamilyActivities, setMemorableFamilyActivities] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,16 +45,14 @@ export function WeeklyReflectionForm({
       const data = {
         weekRating,
         mentalState,
-        physicalState,
         weekHighlights,
         weekChallenges,
         lessonsLearned,
         nextWeekFocus,
-        averageRuminationScore,
-        stableDaysCount,
-        medicationEffectiveDays,
         questionedLeavingJob,
-        weeklyInsight
+        gymDaysCount,
+        dietRating,
+        memorableFamilyActivities
       };
       
       if (onSubmit) {
@@ -121,28 +117,6 @@ export function WeeklyReflectionForm({
             </Select>
           </div>
         
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="physical-state">
-              Physical State
-            </label>
-            <Select
-              value={physicalState}
-              onValueChange={setPhysicalState}
-              required
-            >
-              <SelectTrigger id="physical-state">
-                <SelectValue placeholder="Select state" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Excellent">Excellent</SelectItem>
-                <SelectItem value="Good">Good</SelectItem>
-                <SelectItem value="Neutral">Neutral</SelectItem>
-                <SelectItem value="Tired">Tired</SelectItem>
-                <SelectItem value="Ill">Ill</SelectItem>
-                <SelectItem value="In Pain">In Pain</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="week-highlights">
@@ -203,60 +177,40 @@ export function WeeklyReflectionForm({
           <div className="space-y-2">
             <div className="flex justify-between">
               <label className="text-sm font-medium">
-                Average Rumination Score (1-10)
+                Number of Gym Days This Week
               </label>
-              <span className="text-sm font-medium">{averageRuminationScore}</span>
+              <span className="text-sm font-medium">{gymDaysCount}</span>
             </div>
             <Slider 
-              defaultValue={[averageRuminationScore]}
+              defaultValue={[gymDaysCount]}
+              max={7}
+              step={1}
+              onValueChange={(value) => setGymDaysCount(value[0])}
+              className="py-4"
+            />
+            <div className="flex justify-between text-xs">
+              <span>0</span>
+              <span>7</span>
+            </div>
+          </div>
+        
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <label className="text-sm font-medium">
+                Diet Rating (1-10)
+              </label>
+              <span className="text-sm font-medium">{dietRating}</span>
+            </div>
+            <Slider 
+              defaultValue={[dietRating]}
               max={10}
               step={1}
-              onValueChange={(value) => setAverageRuminationScore(value[0])}
+              onValueChange={(value) => setDietRating(value[0])}
               className="py-4"
             />
             <div className="flex justify-between text-xs">
-              <span>Low</span>
-              <span>High</span>
-            </div>
-          </div>
-        
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <label className="text-sm font-medium">
-                Number of Stable Days
-              </label>
-              <span className="text-sm font-medium">{stableDaysCount}</span>
-            </div>
-            <Slider 
-              defaultValue={[stableDaysCount]}
-              max={7}
-              step={1}
-              onValueChange={(value) => setStableDaysCount(value[0])}
-              className="py-4"
-            />
-            <div className="flex justify-between text-xs">
-              <span>0</span>
-              <span>7</span>
-            </div>
-          </div>
-        
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <label className="text-sm font-medium">
-                Days Medication Was Effective
-              </label>
-              <span className="text-sm font-medium">{medicationEffectiveDays}</span>
-            </div>
-            <Slider 
-              defaultValue={[medicationEffectiveDays]}
-              max={7}
-              step={1}
-              onValueChange={(value) => setMedicationEffectiveDays(value[0])}
-              className="py-4"
-            />
-            <div className="flex justify-between text-xs">
-              <span>0</span>
-              <span>7</span>
+              <span>Poor</span>
+              <span>Excellent</span>
             </div>
           </div>
         
@@ -272,16 +226,15 @@ export function WeeklyReflectionForm({
           </div>
         
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="weekly-insight">
-              Weekly Insight
+            <label className="text-sm font-medium" htmlFor="memorable-family-activities">
+              Memorable Family Activities
             </label>
             <Textarea 
-              id="weekly-insight"
-              value={weeklyInsight}
-              onChange={(e) => setWeeklyInsight(e.target.value)}
-              placeholder="What's your main insight from this week?"
+              id="memorable-family-activities"
+              value={memorableFamilyActivities}
+              onChange={(e) => setMemorableFamilyActivities(e.target.value)}
+              placeholder="What memorable activities did you do with family this week?"
               rows={3}
-              required
             />
           </div>
         

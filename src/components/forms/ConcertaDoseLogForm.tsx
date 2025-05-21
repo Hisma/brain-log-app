@@ -173,6 +173,7 @@ export function ConcertaDoseLogForm({
                     <SelectItem value="Wired">Wired</SelectItem>
                     <SelectItem value="Focused">Focused</SelectItem>
                     <SelectItem value="Calm">Calm</SelectItem>
+                    <SelectItem value="No Noticeable Effect">No Noticeable Effect</SelectItem>
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>

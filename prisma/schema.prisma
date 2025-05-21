@@ -12,16 +12,18 @@ datasource db {
 
 // User model for authentication and user management
 model User {
-  id           Int               @id @default(autoincrement())
-  username     String            @unique
-  passwordHash String
-  displayName  String
-  createdAt    DateTime          @default(now())
-  lastLogin    DateTime?
-  timezone     String            @default("America/New_York") // User's timezone for date handling
-  theme        String            @default("system") // "light", "dark", or "system"
-  dailyLogs    DailyLog[]
+  id                Int               @id @default(autoincrement())
+  username          String            @unique
+  passwordHash      String
+  displayName       String
+  createdAt         DateTime          @default(now())
+  lastLogin         DateTime?
+  timezone          String            @default("America/New_York") // User's timezone for date handling
+  theme             String            @default("system") // "light", "dark", or "system"
+  dailyLogs         DailyLog[]
   weeklyReflections WeeklyReflection[]
+  insights          Insight[]
+  weeklyInsights    WeeklyInsight[]
 }
 
 // Daily log model with time-based sections
@@ -55,8 +57,9 @@ model DailyLog {
   ruminationLevel          Int      @default(0) // Existing field
   currentActivity          String?  // New field
   distractions             String?  // New field
-  mainTrigger              String?  // Existing field
-  responseMethod           String[] @default([]) // Existing field
+  hadEmotionalEvent        Boolean  @default(false) // New field to explicitly track if an event occurred
+  emotionalEvent           String?  // Renamed from mainTrigger
+  copingStrategies         String?  // Changed from responseMethod (String[]) to String
   middayCompleted          Boolean  @default(false) // New field
   
   // Afternoon check-in fields (3-5pm)
@@ -79,6 +82,9 @@ model DailyLog {
   helpfulFactors           String?  // Existing field
   distractingFactors       String?  // Existing field
   thoughtForTomorrow       String?  // Existing field
+  metPhysicalActivityGoals Boolean  @default(false) // New field
+  metDietaryGoals          Boolean  @default(false) // New field
+  neverFeltIsolated        Boolean  @default(false) // Renamed from excessivelyIsolated
   eveningCompleted         Boolean  @default(false) // New field
   
   // Additional fields
@@ -91,6 +97,7 @@ model DailyLog {
   
   // Relationships
   user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insights                 Insight[]
   
   // Indexes
   @@index([userId])
@@ -106,27 +113,62 @@ model WeeklyReflection {
   weekEndDate            DateTime
   
   // Calculated fields
-  averageRuminationScore Float    @default(0)
-  stableDaysCount        Int      @default(0)
-  medicationEffectiveDays Int     @default(0)
   questionedLeavingJob   Boolean  @default(false)
-  weeklyInsight          String?
   
   // Reflection fields
   weekRating             Int?     // 1-10 scale
   mentalState            String?
-  physicalState          String?
   weekHighlights         String?
   weekChallenges         String?
   lessonsLearned         String?
   nextWeekFocus          String?
   
+  // New fields
+  gymDaysCount           Int      @default(0) // Range 1-7
+  dietRating             Int?     // Range 1-10
+  memorableFamilyActivities String?
+  
   // Relationships
   user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyInsights         WeeklyInsight[]
   
   // Indexes
   @@index([userId])
   @@index([weekStartDate])
   @@index([weekEndDate])
   @@unique([userId, weekStartDate, weekEndDate])
+}
+
+// AI-generated insights model
+model Insight {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  dailyLogId      Int
+  insightText     String   @db.Text
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyLog        DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([dailyLogId])
+  @@unique([userId, dailyLogId])
+}
+
+// Weekly AI-generated insights model
+model WeeklyInsight {
+  id                  Int              @id @default(autoincrement())
+  userId              Int
+  weeklyReflectionId  Int
+  insightText         String           @db.Text
+  createdAt           DateTime         @default(now())
+  
+  // Relationships
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyReflection    WeeklyReflection @relation(fields: [weeklyReflectionId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([weeklyReflectionId])
+  @@unique([userId, weeklyReflectionId])
 }

@@ -193,7 +193,7 @@ export function MidDayCheckInForm({
           
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="main-trigger">
-              Main Trigger (if any)
+              Main Rumination Trigger (if any)
             </label>
             <Input 
               id="main-trigger"

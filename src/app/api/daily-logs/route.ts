@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/auth-options';
+import { auth } from '@auth';
 import prisma from '@/lib/prisma';
 
 /**
@@ -10,7 +9,7 @@ import prisma from '@/lib/prisma';
 export async function POST(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -76,8 +75,9 @@ export async function POST(request: Request) {
         ruminationLevel: data.ruminationLevel || 0,
         currentActivity: data.currentActivity || '',
         distractions: data.distractions || '',
-        mainTrigger: data.mainTrigger || '',
-        responseMethod: data.responseMethod || [],
+        hadEmotionalEvent: data.hadEmotionalEvent || false,
+        emotionalEvent: data.emotionalEvent || '',
+        copingStrategies: data.copingStrategies || '',
         middayCompleted: data.middayCompleted || false,
         
         // Afternoon check-in fields (3-5pm)
@@ -100,6 +100,9 @@ export async function POST(request: Request) {
         helpfulFactors: data.helpfulFactors || '',
         distractingFactors: data.distractingFactors || '',
         thoughtForTomorrow: data.thoughtForTomorrow || '',
+        metPhysicalActivityGoals: data.metPhysicalActivityGoals || false,
+        metDietaryGoals: data.metDietaryGoals || false,
+        neverFeltIsolated: data.neverFeltIsolated || false,
         eveningCompleted: data.eveningCompleted || false,
         
         // Additional fields
@@ -130,7 +133,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -199,7 +202,7 @@ export async function GET(request: Request) {
       });
     }
     
-    return NextResponse.json(dailyLogs);
+    return NextResponse.json({ dailyLogs });
   } catch (error) {
     console.error('Error fetching daily logs:', error);
     return NextResponse.json(
@@ -216,7 +219,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -289,8 +292,9 @@ export async function PUT(request: Request) {
         ruminationLevel: data.ruminationLevel !== undefined ? data.ruminationLevel : existingLog.ruminationLevel,
         currentActivity: data.currentActivity !== undefined ? data.currentActivity : existingLog.currentActivity,
         distractions: data.distractions !== undefined ? data.distractions : existingLog.distractions,
-        mainTrigger: data.mainTrigger !== undefined ? data.mainTrigger : existingLog.mainTrigger,
-        responseMethod: data.responseMethod !== undefined ? data.responseMethod : existingLog.responseMethod,
+        hadEmotionalEvent: data.hadEmotionalEvent !== undefined ? data.hadEmotionalEvent : existingLog.hadEmotionalEvent,
+        emotionalEvent: data.emotionalEvent !== undefined ? data.emotionalEvent : existingLog.emotionalEvent,
+        copingStrategies: data.copingStrategies !== undefined ? data.copingStrategies : existingLog.copingStrategies,
         middayCompleted: data.middayCompleted !== undefined ? data.middayCompleted : existingLog.middayCompleted,
         
         // Afternoon check-in fields (3-5pm)
@@ -313,6 +317,9 @@ export async function PUT(request: Request) {
         helpfulFactors: data.helpfulFactors !== undefined ? data.helpfulFactors : existingLog.helpfulFactors,
         distractingFactors: data.distractingFactors !== undefined ? data.distractingFactors : existingLog.distractingFactors,
         thoughtForTomorrow: data.thoughtForTomorrow !== undefined ? data.thoughtForTomorrow : existingLog.thoughtForTomorrow,
+        metPhysicalActivityGoals: data.metPhysicalActivityGoals !== undefined ? data.metPhysicalActivityGoals : existingLog.metPhysicalActivityGoals,
+        metDietaryGoals: data.metDietaryGoals !== undefined ? data.metDietaryGoals : existingLog.metDietaryGoals,
+        neverFeltIsolated: data.neverFeltIsolated !== undefined ? data.neverFeltIsolated : existingLog.neverFeltIsolated,
         eveningCompleted: data.eveningCompleted !== undefined ? data.eveningCompleted : existingLog.eveningCompleted,
         
         // Additional fields
@@ -342,7 +349,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/auth-options';
+import { auth } from '@auth';
 import prisma from '@/lib/prisma';
 
 /**
@@ -10,7 +9,7 @@ import prisma from '@/lib/prisma';
 export async function POST(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -52,18 +51,16 @@ export async function POST(request: Request) {
         userId,
         weekStartDate: new Date(data.weekStartDate),
         weekEndDate: new Date(data.weekEndDate),
-        averageRuminationScore: data.averageRuminationScore || 0,
-        stableDaysCount: data.stableDaysCount || 0,
-        medicationEffectiveDays: data.medicationEffectiveDays || 0,
         questionedLeavingJob: data.questionedLeavingJob || false,
-        weeklyInsight: data.weeklyInsight || '',
         weekRating: data.weekRating,
         mentalState: data.mentalState,
-        physicalState: data.physicalState,
         weekHighlights: data.weekHighlights,
         weekChallenges: data.weekChallenges,
         lessonsLearned: data.lessonsLearned,
-        nextWeekFocus: data.nextWeekFocus
+        nextWeekFocus: data.nextWeekFocus,
+        gymDaysCount: data.gymDaysCount || 0,
+        dietRating: data.dietRating || 0,
+        memorableFamilyActivities: data.memorableFamilyActivities || ''
       }
     });
     
@@ -85,7 +82,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -168,7 +165,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -216,18 +213,16 @@ export async function PUT(request: Request) {
       data: {
         weekStartDate: data.weekStartDate ? new Date(data.weekStartDate) : existingReflection.weekStartDate,
         weekEndDate: data.weekEndDate ? new Date(data.weekEndDate) : existingReflection.weekEndDate,
-        averageRuminationScore: data.averageRuminationScore !== undefined ? data.averageRuminationScore : existingReflection.averageRuminationScore,
-        stableDaysCount: data.stableDaysCount !== undefined ? data.stableDaysCount : existingReflection.stableDaysCount,
-        medicationEffectiveDays: data.medicationEffectiveDays !== undefined ? data.medicationEffectiveDays : existingReflection.medicationEffectiveDays,
         questionedLeavingJob: data.questionedLeavingJob !== undefined ? data.questionedLeavingJob : existingReflection.questionedLeavingJob,
-        weeklyInsight: data.weeklyInsight !== undefined ? data.weeklyInsight : existingReflection.weeklyInsight,
         weekRating: data.weekRating !== undefined ? data.weekRating : existingReflection.weekRating,
         mentalState: data.mentalState !== undefined ? data.mentalState : existingReflection.mentalState,
-        physicalState: data.physicalState !== undefined ? data.physicalState : existingReflection.physicalState,
         weekHighlights: data.weekHighlights !== undefined ? data.weekHighlights : existingReflection.weekHighlights,
         weekChallenges: data.weekChallenges !== undefined ? data.weekChallenges : existingReflection.weekChallenges,
         lessonsLearned: data.lessonsLearned !== undefined ? data.lessonsLearned : existingReflection.lessonsLearned,
-        nextWeekFocus: data.nextWeekFocus !== undefined ? data.nextWeekFocus : existingReflection.nextWeekFocus
+        nextWeekFocus: data.nextWeekFocus !== undefined ? data.nextWeekFocus : existingReflection.nextWeekFocus,
+        gymDaysCount: data.gymDaysCount !== undefined ? data.gymDaysCount : existingReflection.gymDaysCount,
+        dietRating: data.dietRating !== undefined ? data.dietRating : existingReflection.dietRating,
+        memorableFamilyActivities: data.memorableFamilyActivities !== undefined ? data.memorableFamilyActivities : existingReflection.memorableFamilyActivities
       }
     });
     
@@ -248,7 +243,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     // Get the authenticated user from the session
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useRef, useState } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -22,6 +22,8 @@ interface AuthContextType {
   logout: () => void;
   register: (userData: UserRegistrationData) => Promise<boolean>;
   updateUserTimezone: (timezone: string) => Promise<boolean>;
+  refreshSession: (forceReload?: boolean) => Promise<boolean>;
+  sessionExpired: boolean;
 }
 
 // Data needed for user registration
@@ -41,6 +43,8 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   register: async () => false,
   updateUserTimezone: async () => false,
+  refreshSession: async () => false,
+  sessionExpired: false,
 });
 
 // Custom hook to use the auth context
@@ -54,8 +58,68 @@ export function useAuth() {
 
 // Provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const lastActivityTime = useRef(Date.now());
+  const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Session activity tracker
+  useEffect(() => {
+    // Reset session expired state when session changes
+    if (session) {
+      setSessionExpired(false);
+    }
+    
+    // Track user activity to detect idle timeout
+    const updateLastActivity = () => {
+      lastActivityTime.current = Date.now();
+      
+      // If session was marked as expired but user is active, try to refresh
+      if (sessionExpired && session) {
+        refreshSession();
+      }
+    };
+    
+    // Set up activity listeners
+    window.addEventListener('mousemove', updateLastActivity);
+    window.addEventListener('keydown', updateLastActivity);
+    window.addEventListener('click', updateLastActivity);
+    window.addEventListener('scroll', updateLastActivity);
+    
+    // Check session status periodically
+    const checkSessionStatus = async () => {
+      try {
+        // Only check if we have an active session
+        if (session) {
+          // Make a lightweight API call to verify session is still valid on server
+          const response = await fetch('/api/auth/session-check');
+          
+          if (!response.ok) {
+            // If server reports session invalid, mark as expired
+            setSessionExpired(true);
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      }
+    };
+    
+    // Set up periodic session check (every 5 minutes)
+    sessionTimeoutRef.current = setInterval(checkSessionStatus, 5 * 60 * 1000);
+    
+    return () => {
+      // Clean up event listeners and interval
+      window.removeEventListener('mousemove', updateLastActivity);
+      window.removeEventListener('keydown', updateLastActivity);
+      window.removeEventListener('click', updateLastActivity);
+      window.removeEventListener('scroll', updateLastActivity);
+      
+      if (sessionTimeoutRef.current) {
+        clearInterval(sessionTimeoutRef.current);
+      }
+    };
+  }, [session, sessionExpired]);
 
   // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
@@ -137,20 +201,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Session refresh function
+  const refreshSession = async (forceReload = false): Promise<boolean> => {
+    try {
+      if (!session) return false;
+      
+      // Call NextAuth's update function to refresh the session
+      const updatedSession = await updateSession();
+      
+      // Reset session expired state if refresh was successful
+      if (updatedSession) {
+        setSessionExpired(false);
+        
+        // Force a reload of the page to ensure all components reflect the latest session state
+        // This is especially important after making changes to the site
+        if (forceReload && typeof window !== 'undefined') {
+          // Add a small delay to ensure the session update is complete
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Session refresh error:', error);
+      return false;
+    }
+  };
+
   // Create the context value with proper mapping for displayName and username
   const value = {
     user: session?.user ? {
       ...session.user,
+      // Ensure the ID is a number for our application's internal use
+      id: typeof session.user.id === 'string' ? parseInt(session.user.id, 10) : session.user.id,
       displayName: session.user.name || '', // Map NextAuth's name to our displayName
       username: session.user.email || '', // Map NextAuth's email to our username
       timezone: session.user.timezone || 'America/New_York', // Default timezone if not provided
     } : null,
-    isAuthenticated: !!session?.user,
+    isAuthenticated: !!session?.user && !sessionExpired,
     isLoading: status === 'loading',
     login,
     logout,
     register,
-    updateUserTimezone
+    updateUserTimezone,
+    refreshSession,
+    sessionExpired
   };
 
   return (

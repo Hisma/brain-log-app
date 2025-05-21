@@ -8,18 +8,16 @@ export interface WeeklyReflection {
   userId: number;
   weekStartDate: Date;
   weekEndDate: Date;
-  averageRuminationScore: number;
-  stableDaysCount: number;
-  medicationEffectiveDays: number;
   questionedLeavingJob: boolean;
-  weeklyInsight: string;
   weekRating?: number;
   mentalState?: string;
-  physicalState?: string;
   weekHighlights?: string;
   weekChallenges?: string;
   lessonsLearned?: string;
   nextWeekFocus?: string;
+  gymDaysCount?: number;
+  dietRating?: number;
+  memorableFamilyActivities?: string;
 }
 
 /**
