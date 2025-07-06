@@ -14,13 +14,15 @@ interface WeeklyReflectionFormProps {
   endDate: Date;
   onSubmit?: (data: any) => void;
   onBack?: () => void;
+  isSubmitting?: boolean;
 }
 
 export function WeeklyReflectionForm({ 
   startDate, 
   endDate, 
   onSubmit,
-  onBack
+  onBack,
+  isSubmitting: externalIsSubmitting = false
 }: WeeklyReflectionFormProps) {
   // Rename for internal consistency
   const weekStartDate = startDate;
@@ -35,33 +37,24 @@ export function WeeklyReflectionForm({
   const [gymDaysCount, setGymDaysCount] = useState(0);
   const [dietRating, setDietRating] = useState(5);
   const [memorableFamilyActivities, setMemorableFamilyActivities] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    try {
-      const data = {
-        weekRating,
-        mentalState,
-        weekHighlights,
-        weekChallenges,
-        lessonsLearned,
-        nextWeekFocus,
-        questionedLeavingJob,
-        gymDaysCount,
-        dietRating,
-        memorableFamilyActivities
-      };
-      
-      if (onSubmit) {
-        onSubmit(data);
-      }
-    } catch (error) {
-      console.error('Error saving weekly reflection:', error);
-    } finally {
-      setIsSubmitting(false);
+    const data = {
+      weekRating,
+      mentalState,
+      weekHighlights,
+      weekChallenges,
+      lessonsLearned,
+      nextWeekFocus,
+      questionedLeavingJob,
+      gymDaysCount,
+      dietRating,
+      memorableFamilyActivities
+    };
+    
+    if (onSubmit) {
+      onSubmit(data);
     }
   };
   
@@ -250,10 +243,10 @@ export function WeeklyReflectionForm({
             )}
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={externalIsSubmitting}
               className={onBack ? "" : "w-full"}
             >
-              {isSubmitting ? 'Saving...' : 'Save Weekly Reflection'}
+              {externalIsSubmitting ? 'Saving...' : 'Save Weekly Reflection'}
             </Button>
           </div>
         </form>

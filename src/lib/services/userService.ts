@@ -1,4 +1,4 @@
-import { fetchApi, get, post, put } from './api';
+import { get, put } from './api';
 
 /**
  * User service for interacting with the user API endpoints
@@ -29,10 +29,7 @@ export async function getUser(userId: number): Promise<User> {
  * @returns The updated user object
  */
 export async function updateUserProfile(userId: number, data: { displayName?: string; theme?: string }): Promise<User> {
-  return fetchApi<User>(`users/${userId}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data)
-  });
+  return put<User>(`users/${userId}`, data);
 }
 
 /**
@@ -47,11 +44,8 @@ export async function updateUserPassword(
   currentPassword: string,
   newPassword: string
 ): Promise<User> {
-  return fetchApi<User>(`users/${userId}`, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      currentPassword,
-      newPassword
-    })
+  return put<User>(`users/${userId}`, {
+    currentPassword,
+    newPassword
   });
 }

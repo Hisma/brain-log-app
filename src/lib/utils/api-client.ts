@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/lib/auth/AuthContext';
-import { auth, signIn, signOut } from '@auth';
 
 // Define the API client interface
 export interface ApiClient {
@@ -21,7 +20,7 @@ export function createBasicApiClient(): ApiClient {
    */
   const fetchWithBasicAuth = async (url: string, options: RequestInit = {}) => {
     // First attempt
-    let response = await fetch(url, options);
+    const response = await fetch(url, options);
     
     // If we get a 401 Unauthorized, we can't refresh the session here
     // because we don't have access to the auth context
@@ -131,7 +130,7 @@ export function createAuthApiClient(refreshSession: (forceReload?: boolean) => P
    */
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     // First attempt
-    let response = await fetch(url, options);
+    const response = await fetch(url, options);
     
     // If we get a 401 Unauthorized, try to refresh the session
     if (response.status === 401) {

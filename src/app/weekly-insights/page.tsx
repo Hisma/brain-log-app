@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,7 +26,6 @@ interface WeeklyInsight {
 }
 
 export default function WeeklyInsightsPage() {
-  const router = useRouter();
   const [weeklyReflections, setWeeklyReflections] = useState<WeeklyReflection[]>([]);
   const [weeklyInsights, setWeeklyInsights] = useState<WeeklyInsight[]>([]);
   const [selectedReflectionId, setSelectedReflectionId] = useState<string>('');

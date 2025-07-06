@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { WeeklyReflectionForm } from '@/components/forms/WeeklyReflectionForm';
 import { weeklyReflectionService, WeeklyReflection } from '@/lib/services/weeklyReflectionService';
-import { formatDate, formatWeekRange, getWeekRange } from '@/lib/utils/index';
+import { formatWeekRange, getWeekRange } from '@/lib/utils/index';
 import { useAuth } from '@/lib/auth/AuthContext';
 import {
   Dialog,
@@ -15,8 +15,6 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-  DialogTrigger,
-  DialogDescription,
 } from '@/components/ui/dialog';
 
 export default function WeeklyReflectionPage() {
@@ -131,10 +129,10 @@ export default function WeeklyReflectionPage() {
               </div>
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                 <div>
-                  <span className="font-medium">Mental:</span> {reflection.mentalState}
+                  <span className="font-medium">Mental:</span> {reflection.mentalState || 'Not specified'}
                 </div>
                 <div>
-                  <span className="font-medium">Physical:</span> {reflection.physicalState}
+                  <span className="font-medium">Gym Days:</span> {reflection.gymDaysCount}/7
                 </div>
               </div>
             </CardContent>
@@ -159,6 +157,7 @@ export default function WeeklyReflectionPage() {
           onBack={() => setIsCreating(false)}
           startDate={startDate}
           endDate={endDate}
+          isSubmitting={isSubmitting}
         />
       </div>
     );
@@ -238,8 +237,8 @@ export default function WeeklyReflectionPage() {
                   <p className="font-medium">{selectedReflection.mentalState}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">Physical State</p>
-                  <p className="font-medium">{selectedReflection.physicalState}</p>
+                  <p className="text-gray-500 dark:text-gray-400">Diet Rating</p>
+                  <p className="font-medium">{selectedReflection.dietRating || 'Not specified'}/10</p>
                 </div>
               </div>
 

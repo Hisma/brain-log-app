@@ -1,9 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // ESLint configuration - now using warnings instead of strict errors
+  eslint: {
+    // Allow warnings during builds, only fail on errors
+    ignoreDuringBuilds: false,
+  },
+  // Configure external packages for server components
+  serverExternalPackages: ['bcryptjs', '@prisma/client'],
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', '172.18.0.2:3000', '0.0.0.0:3000', '192.168.0.227:3003'],
+      allowedOrigins: process.env.NODE_ENV === 'production' 
+        ? [process.env.NEXTAUTH_URL] 
+        : ['localhost:3000', '172.18.0.2:3000', '0.0.0.0:3000', '192.168.0.227:3003'],
     },
   },
   // Make the server listen on all network interfaces

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DailyLogOverview } from '@/components/DailyLogOverview';
 import { MorningCheckInForm } from '@/components/forms/MorningCheckInForm';
@@ -21,10 +21,8 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-  DialogTrigger,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Edit, ArrowLeft, Lightbulb } from 'lucide-react';
+import { Edit, ArrowLeft } from 'lucide-react';
 import { InsightButton } from '@/components/ui/insight-button';
 
 // Define the possible form sections
@@ -836,8 +834,8 @@ export default function DailyLogPage() {
       ruminationLevel: log.ruminationLevel || 5,
       currentActivity: log.currentActivity || '',
       distractions: log.distractions || '',
-      mainTrigger: log.mainTrigger || '',
-      responseMethod: log.responseMethod || [],
+      mainTrigger: log.emotionalEvent || '',
+      responseMethod: log.copingStrategies ? [log.copingStrategies] : [],
     });
     
     // Afternoon data
@@ -1019,6 +1017,7 @@ export default function DailyLogPage() {
             dailyLogId={dailyLogId || undefined}
             onSubmit={handleMorningSubmit}
             onBack={() => setCurrentSection('overview')}
+            isSubmitting={isSubmitting}
           />
         ) : currentSection === 'medication' ? (
           <ConcertaDoseLogForm 
@@ -1027,6 +1026,7 @@ export default function DailyLogPage() {
             dailyLogId={dailyLogId || undefined}
             onSubmit={handleMedicationSubmit}
             onBack={() => setCurrentSection('overview')}
+            isSubmitting={isSubmitting}
           />
         ) : currentSection === 'midday' ? (
           <MidDayCheckInForm 
@@ -1035,6 +1035,7 @@ export default function DailyLogPage() {
             dailyLogId={dailyLogId || undefined}
             onSubmit={handleMiddaySubmit}
             onBack={() => setCurrentSection('overview')}
+            isSubmitting={isSubmitting}
           />
         ) : currentSection === 'afternoon' ? (
           <AfternoonCheckInForm 
@@ -1043,6 +1044,7 @@ export default function DailyLogPage() {
             dailyLogId={dailyLogId || undefined}
             onSubmit={handleAfternoonSubmit}
             onBack={() => setCurrentSection('overview')}
+            isSubmitting={isSubmitting}
           />
         ) : (
           <EveningReflectionForm 
@@ -1051,6 +1053,7 @@ export default function DailyLogPage() {
             dailyLogId={dailyLogId || undefined}
             onSubmit={handleEveningSubmit}
             onBack={() => setCurrentSection('overview')}
+            isSubmitting={isSubmitting}
           />
         )}
 
@@ -1236,16 +1239,16 @@ export default function DailyLogPage() {
                     <p className="font-medium">{selectedLog.distractions}</p>
                   </div>
                 )}
-                {selectedLog.mainTrigger && (
+                {selectedLog.emotionalEvent && (
                   <div className="col-span-2">
-                    <p className="text-gray-500 dark:text-gray-400">Main Trigger</p>
-                    <p className="font-medium">{selectedLog.mainTrigger}</p>
+                    <p className="text-gray-500 dark:text-gray-400">Emotional Event</p>
+                    <p className="font-medium">{selectedLog.emotionalEvent}</p>
                   </div>
                 )}
-                {selectedLog.responseMethod && selectedLog.responseMethod.length > 0 && (
+                {selectedLog.copingStrategies && (
                   <div className="col-span-2">
-                    <p className="text-gray-500 dark:text-gray-400">Response Methods</p>
-                    <p className="font-medium">{selectedLog.responseMethod.join(', ')}</p>
+                    <p className="text-gray-500 dark:text-gray-400">Coping Strategies</p>
+                    <p className="font-medium">{selectedLog.copingStrategies}</p>
                   </div>
                 )}
               </div>

@@ -10,7 +10,7 @@ import { useSession } from 'next-auth/react';
 import { TimezoneSelector } from '@/components/timezone-selector';
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, refreshSession } = useAuth();
   const router = useRouter();
   const { update: updateSession } = useSession();
   
@@ -54,16 +54,24 @@ export default function ProfilePage() {
       // Update user record using the API
       const updatedUser = await updateUserProfile(user.id, { displayName });
       
-      // Update the session with the new display name
-      // This triggers the jwt callback with trigger="update"
+      // Verify the update was successful
+      if (!updatedUser || updatedUser.id !== user.id) {
+        throw new Error('Failed to update profile - invalid response from server');
+      }
+      
+      // Update the session with the new display name from the server response
+      // This ensures we're using the exact data that was saved to the database
       await updateSession({
         user: {
           ...user,
-          name: displayName
+          name: updatedUser.displayName
         }
       });
       
-      setMessage('Profile updated successfully');
+      // Refresh the session to ensure all components reflect the updated user data
+      await refreshSession();
+      
+      setMessage(`Profile updated successfully. Display name is now "${updatedUser.displayName}"`);
     } catch (err: any) {
       setError(err.message || 'Failed to update profile');
       console.error('Profile update error:', err);

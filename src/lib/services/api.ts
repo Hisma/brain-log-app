@@ -1,8 +1,6 @@
 'use client';
 
-import React from 'react';
-import { useApiClient, createBasicApiClient, ApiClient } from '@/lib/utils/api-client';
-import { cache } from 'react';
+import { createBasicApiClient, ApiClient } from '@/lib/utils/api-client';
 
 /**
  * API service for making requests to the server
@@ -10,32 +8,15 @@ import { cache } from 'react';
  * with automatic session refresh on 401 errors
  */
 
-// Create a singleton instance of the API client for client components
-let apiClientInstance: ApiClient | null = null;
-
 /**
  * Get the API client instance
  * This function safely handles both React component and non-React contexts
+ * Note: For React components that need session refresh, use useApiClient() directly
  */
 function getApiClient(): ApiClient {
-  if (typeof window === 'undefined') {
-    // Server-side rendering - we can't use hooks
-    // Return a basic implementation that doesn't handle session refresh
-    return createBasicApiClient();
-  }
-  
-  // Client-side rendering - try to use the hook-based client
-  if (!apiClientInstance) {
-    try {
-      // This will throw if we're not in a React component context
-      apiClientInstance = useApiClient();
-    } catch (error) {
-      console.warn('Not in a React component context, using basic API client');
-      apiClientInstance = createBasicApiClient();
-    }
-  }
-  
-  return apiClientInstance;
+  // Always use the basic API client for this service layer
+  // Components that need session refresh should use useApiClient() hook directly
+  return createBasicApiClient();
 }
 
 /**
@@ -79,7 +60,7 @@ export async function get<T>(endpoint: string, params?: Record<string, string | 
  * @param data - The data to send in the request body
  * @returns The JSON response from the API
  */
-export async function post<T>(endpoint: string, data: any): Promise<T> {
+export async function post<T>(endpoint: string, data: Record<string, unknown>): Promise<T> {
   const apiClient = getApiClient();
   
   // Create a clean endpoint without any /api/ prefix
@@ -98,7 +79,7 @@ export async function post<T>(endpoint: string, data: any): Promise<T> {
  * @param data - The data to send in the request body
  * @returns The JSON response from the API
  */
-export async function put<T>(endpoint: string, data: any): Promise<T> {
+export async function put<T>(endpoint: string, data: Record<string, unknown>): Promise<T> {
   const apiClient = getApiClient();
   
   // Create a clean endpoint without any /api/ prefix

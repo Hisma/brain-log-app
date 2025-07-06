@@ -23,6 +23,7 @@ interface MorningCheckInFormProps {
   onSubmit?: (data: any) => void;
   onNext?: () => void;
   onBack?: () => void;
+  isSubmitting?: boolean;
 }
 
 export function MorningCheckInForm({ 
@@ -31,7 +32,8 @@ export function MorningCheckInForm({
   dailyLogId,
   onSubmit, 
   onNext,
-  onBack
+  onBack,
+  isSubmitting: externalIsSubmitting = false
 }: MorningCheckInFormProps) {
   const [sleepHours, setSleepHours] = useState(initialValues?.sleepHours || 7);
   const [sleepQuality, setSleepQuality] = useState(initialValues?.sleepQuality || 5);
@@ -39,50 +41,24 @@ export function MorningCheckInForm({
   const [morningMood, setMorningMood] = useState(initialValues?.morningMood || 5);
   const [physicalStatus, setPhysicalStatus] = useState(initialValues?.physicalStatus || '');
   const [breakfast, setBreakfast] = useState(initialValues?.breakfast || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    try {
-      const data = {
-        sleepHours,
-        sleepQuality,
-        dreams,
-        morningMood,
-        physicalStatus,
-        breakfast
-      };
-      
-      // Get the user ID from the session
-      // For now, we'll use a placeholder user ID of 1
-      // This should be replaced with the actual user ID from the session
-      const userId = 1;
-      
-      if (isUpdate && dailyLogId) {
-        // Update existing morning check-in
-        await updateMorningCheckIn(userId, dailyLogId, data, isUpdate);
-      } else {
-        // Create new morning check-in
-        const fullData = {
-          ...data,
-          date: new Date()
-        };
-        await createMorningCheckIn(userId, fullData);
-      }
-      
-      if (onSubmit) {
-        onSubmit(data);
-      }
-      
-      if (onNext) {
-        onNext();
-      }
-    } catch (error) {
-      console.error('Error saving morning check-in:', error);
-    } finally {
-      setIsSubmitting(false);
+    const data = {
+      sleepHours,
+      sleepQuality,
+      dreams,
+      morningMood,
+      physicalStatus,
+      breakfast
+    };
+    
+    if (onSubmit) {
+      onSubmit(data);
+    }
+    
+    if (onNext) {
+      onNext();
     }
   };
   
@@ -209,10 +185,10 @@ export function MorningCheckInForm({
             )}
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={externalIsSubmitting}
               className={onBack ? "ml-auto" : "w-full"}
             >
-              {isSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Morning Check-In'}
+              {externalIsSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Morning Check-In'}
             </Button>
           </div>
         </form>

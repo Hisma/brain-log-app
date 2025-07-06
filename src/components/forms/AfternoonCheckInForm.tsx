@@ -29,6 +29,7 @@ interface AfternoonCheckInFormProps {
   onSubmit?: (data: any) => void;
   onNext?: () => void;
   onBack?: () => void;
+  isSubmitting?: boolean;
 }
 
 export function AfternoonCheckInForm({ 
@@ -37,7 +38,8 @@ export function AfternoonCheckInForm({
   dailyLogId,
   onSubmit, 
   onNext, 
-  onBack 
+  onBack,
+  isSubmitting: externalIsSubmitting = false
 }: AfternoonCheckInFormProps) {
   const [afternoonSnack, setAfternoonSnack] = useState(initialValues?.afternoonSnack || '');
   const [isCrashing, setIsCrashing] = useState(initialValues?.isCrashing || false);
@@ -50,49 +52,29 @@ export function AfternoonCheckInForm({
   const [interactionDetails, setInteractionDetails] = useState(initialValues?.interactionDetails || '');
   const [selfWorthTiedToPerformance, setSelfWorthTiedToPerformance] = useState(initialValues?.selfWorthTiedToPerformance || '');
   const [overextended, setOverextended] = useState(initialValues?.overextended || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    try {
-      const data = {
-        afternoonSnack,
-        isCrashing,
-        crashSymptoms: isCrashing ? crashSymptoms : '',
-        secondDoseTaken,
-        secondDoseTime: secondDoseTaken ? secondDoseTime : undefined,
-        anxietyLevel,
-        isFeeling,
-        hadTriggeringInteraction,
-        interactionDetails: hadTriggeringInteraction ? interactionDetails : '',
-        selfWorthTiedToPerformance,
-        overextended
-      };
-      
-      // Get the user ID from the session
-      // For now, we'll use a placeholder user ID of 1
-      // This should be replaced with the actual user ID from the session
-      const userId = 1;
-      
-      // For now, we'll use a placeholder log ID if not provided
-      const logId = dailyLogId || 1;
-      
-      // Save the afternoon check-in data
-      await updateAfternoonCheckIn(userId, logId, data, isUpdate);
-      
-      if (onSubmit) {
-        onSubmit(data);
-      }
-      
-      if (onNext) {
-        onNext();
-      }
-    } catch (error) {
-      console.error('Error saving afternoon check-in:', error);
-    } finally {
-      setIsSubmitting(false);
+    const data = {
+      afternoonSnack,
+      isCrashing,
+      crashSymptoms: isCrashing ? crashSymptoms : '',
+      secondDoseTaken,
+      secondDoseTime: secondDoseTaken ? secondDoseTime : undefined,
+      anxietyLevel,
+      isFeeling,
+      hadTriggeringInteraction,
+      interactionDetails: hadTriggeringInteraction ? interactionDetails : '',
+      selfWorthTiedToPerformance,
+      overextended
+    };
+    
+    if (onSubmit) {
+      onSubmit(data);
+    }
+    
+    if (onNext) {
+      onNext();
     }
   };
   
@@ -258,10 +240,10 @@ export function AfternoonCheckInForm({
             )}
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={externalIsSubmitting}
               className={onBack ? "ml-auto" : "w-full"}
             >
-              {isSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Afternoon Check-In'}
+              {externalIsSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Afternoon Check-In'}
             </Button>
           </div>
         </form>

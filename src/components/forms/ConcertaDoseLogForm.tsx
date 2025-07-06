@@ -24,6 +24,7 @@ interface ConcertaDoseLogFormProps {
   onSubmit?: (data: any) => void;
   onNext?: () => void;
   onBack?: () => void;
+  isSubmitting?: boolean;
 }
 
 export function ConcertaDoseLogForm({ 
@@ -32,7 +33,8 @@ export function ConcertaDoseLogForm({
   dailyLogId,
   onSubmit, 
   onNext, 
-  onBack 
+  onBack,
+  isSubmitting: externalIsSubmitting = false
 }: ConcertaDoseLogFormProps) {
   const [medicationTaken, setMedicationTaken] = useState(initialValues?.medicationTaken || false);
   const [medicationTakenAt, setMedicationTakenAt] = useState<Date | undefined>(initialValues?.medicationTakenAt);
@@ -40,8 +42,6 @@ export function ConcertaDoseLogForm({
   const [ateWithinHour, setAteWithinHour] = useState(initialValues?.ateWithinHour || false);
   const [firstHourFeeling, setFirstHourFeeling] = useState(initialValues?.firstHourFeeling || '');
   const [reasonForSkipping, setReasonForSkipping] = useState(initialValues?.reasonForSkipping || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   // Set default medication time to current time if not provided and medication is taken
   useEffect(() => {
     if (medicationTaken && !medicationTakenAt) {
@@ -51,43 +51,25 @@ export function ConcertaDoseLogForm({
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    try {
-      const data = {
-        medicationTaken,
-        ...(medicationTaken ? {
-          medicationTakenAt,
-          medicationDose,
-          ateWithinHour,
-          firstHourFeeling
-        } : {
-          reasonForSkipping
-        })
-      };
-      
-      // Get the user ID from the session
-      // For now, we'll use a placeholder user ID of 1
-      // This should be replaced with the actual user ID from the session
-      const userId = 1;
-      
-      // For now, we'll use a placeholder log ID if not provided
-      const logId = dailyLogId || 1;
-      
-      // Save the concerta dose log data
-      await updateConcertaDoseLog(userId, logId, data, isUpdate);
-      
-      if (onSubmit) {
-        onSubmit(data);
-      }
-      
-      if (onNext) {
-        onNext();
-      }
-    } catch (error) {
-      console.error('Error saving concerta dose log:', error);
-    } finally {
-      setIsSubmitting(false);
+    const data = {
+      medicationTaken,
+      ...(medicationTaken ? {
+        medicationTakenAt,
+        medicationDose,
+        ateWithinHour,
+        firstHourFeeling
+      } : {
+        reasonForSkipping
+      })
+    };
+    
+    if (onSubmit) {
+      onSubmit(data);
+    }
+    
+    if (onNext) {
+      onNext();
     }
   };
   
@@ -216,10 +198,10 @@ export function ConcertaDoseLogForm({
             )}
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={externalIsSubmitting}
               className={onBack ? "ml-auto" : "w-full"}
             >
-              {isSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Concerta Dose Log'}
+              {externalIsSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Concerta Dose Log'}
             </Button>
           </div>
         </form>

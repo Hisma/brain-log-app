@@ -62,20 +62,16 @@ export function prepareWeeklyInsightsData(weeklyReflection: WeeklyReflection | u
   // Create radar chart data from weekly reflection
   const chartData = [
     {
-      category: "Mental State",
+      category: "Week Rating",
       value: weeklyReflection.weekRating || 5,
     },
     {
-      category: "Stable Days",
-      value: weeklyReflection.stableDaysCount || 0,
+      category: "Gym Days",
+      value: weeklyReflection.gymDaysCount || 0,
     },
     {
-      category: "Medication Effective",
-      value: weeklyReflection.medicationEffectiveDays || 0,
-    },
-    {
-      category: "Rumination (Inverse)",
-      value: 10 - (weeklyReflection.averageRuminationScore || 5),
+      category: "Diet Rating",
+      value: weeklyReflection.dietRating || 5,
     },
     {
       category: "Job Satisfaction",

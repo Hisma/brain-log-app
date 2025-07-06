@@ -34,6 +34,7 @@ interface EveningReflectionFormProps {
   onSubmit?: (data: any) => void;
   onNext?: () => void;
   onBack?: () => void;
+  isSubmitting?: boolean;
 }
 
 export function EveningReflectionForm({ 
@@ -42,7 +43,8 @@ export function EveningReflectionForm({
   dailyLogId,
   onSubmit, 
   onNext,
-  onBack 
+  onBack,
+  isSubmitting: externalIsSubmitting = false
 }: EveningReflectionFormProps) {
   const [dinner, setDinner] = useState(initialValues?.dinner || '');
   const [overallMood, setOverallMood] = useState(initialValues?.overallMood || 5);
@@ -60,50 +62,30 @@ export function EveningReflectionForm({
   const [metPhysicalActivityGoals, setMetPhysicalActivityGoals] = useState(initialValues?.metPhysicalActivityGoals || false);
   const [metDietaryGoals, setMetDietaryGoals] = useState(initialValues?.metDietaryGoals || false);
   const [neverFeltIsolated, setNeverFeltIsolated] = useState(initialValues?.neverFeltIsolated || false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    try {
-      const data = {
-        dinner,
-        overallMood,
-        sleepiness,
-        medicationEffectiveness,
-        helpfulFactors,
-        distractingFactors,
-        thoughtForTomorrow,
-        tomorrowPlan,
-        dayRating,
-        accomplishments,
-        challenges,
-        gratitude,
-        improvements,
-        metPhysicalActivityGoals,
-        metDietaryGoals,
-        neverFeltIsolated
-      };
-      
-      // Get the user ID from the session
-      // For now, we'll use a placeholder user ID of 1
-      // This should be replaced with the actual user ID from the session
-      const userId = 1;
-      
-      // For now, we'll use a placeholder log ID if not provided
-      const logId = dailyLogId || 1;
-      
-      // Save the evening reflection data
-      await updateEveningReflection(userId, logId, data, isUpdate);
-      
-      if (onSubmit) {
-        onSubmit(data);
-      }
-    } catch (error) {
-      console.error('Error saving evening reflection:', error);
-    } finally {
-      setIsSubmitting(false);
+    const data = {
+      dinner,
+      overallMood,
+      sleepiness,
+      medicationEffectiveness,
+      helpfulFactors,
+      distractingFactors,
+      thoughtForTomorrow,
+      tomorrowPlan,
+      dayRating,
+      accomplishments,
+      challenges,
+      gratitude,
+      improvements,
+      metPhysicalActivityGoals,
+      metDietaryGoals,
+      neverFeltIsolated
+    };
+    
+    if (onSubmit) {
+      onSubmit(data);
     }
   };
   
@@ -353,10 +335,10 @@ export function EveningReflectionForm({
             )}
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={externalIsSubmitting}
               className={onBack ? "ml-auto" : "w-full"}
             >
-              {isSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Complete Daily Log'}
+              {externalIsSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Complete Daily Log'}
             </Button>
           </div>
         </form>

@@ -11,20 +11,21 @@ import { updateMidDayCheckIn } from '@/lib/services/dailyLogService';
 
 interface MidDayCheckInFormProps {
   initialValues?: {
-  lunch?: string;
-  focusLevel?: number;
-  energyLevel?: number;
-  ruminationLevel?: number;
-  currentActivity?: string;
-  distractions?: string;
-  mainTrigger?: string;
-  responseMethod?: string[];
+    lunch?: string;
+    focusLevel?: number;
+    energyLevel?: number;
+    ruminationLevel?: number;
+    currentActivity?: string;
+    distractions?: string;
+    mainTrigger?: string;
+    responseMethod?: string[];
   };
   isUpdate?: boolean;
   dailyLogId?: number;
   onSubmit?: (data: any) => void;
   onNext?: () => void;
   onBack?: () => void;
+  isSubmitting?: boolean;
 }
 
 export function MidDayCheckInForm({ 
@@ -33,7 +34,8 @@ export function MidDayCheckInForm({
   dailyLogId,
   onSubmit, 
   onNext, 
-  onBack 
+  onBack,
+  isSubmitting: externalIsSubmitting = false
 }: MidDayCheckInFormProps) {
   const [lunch, setLunch] = useState(initialValues?.lunch || '');
   const [focusLevel, setFocusLevel] = useState(initialValues?.focusLevel || 5);
@@ -43,46 +45,26 @@ export function MidDayCheckInForm({
   const [distractions, setDistractions] = useState(initialValues?.distractions || '');
   const [mainTrigger, setMainTrigger] = useState(initialValues?.mainTrigger || '');
   const [responseMethod, setResponseMethod] = useState<string[]>(initialValues?.responseMethod || ['Redirected attention']);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    try {
-      const data = {
-        lunch,
-        focusLevel,
-        energyLevel,
-        ruminationLevel,
-        currentActivity,
-        distractions,
-        mainTrigger,
-        responseMethod
-      };
-      
-      // Get the user ID from the session
-      // For now, we'll use a placeholder user ID of 1
-      // This should be replaced with the actual user ID from the session
-      const userId = 1;
-      
-      // For now, we'll use a placeholder log ID if not provided
-      const logId = dailyLogId || 1;
-      
-      // Save the mid-day check-in data
-      await updateMidDayCheckIn(userId, logId, data, isUpdate);
-      
-      if (onSubmit) {
-        onSubmit(data);
-      }
-      
-      if (onNext) {
-        onNext();
-      }
-    } catch (error) {
-      console.error('Error saving mid-day check-in:', error);
-    } finally {
-      setIsSubmitting(false);
+    const data = {
+      lunch,
+      focusLevel,
+      energyLevel,
+      ruminationLevel,
+      currentActivity,
+      distractions,
+      mainTrigger,
+      responseMethod
+    };
+    
+    if (onSubmit) {
+      onSubmit(data);
+    }
+    
+    if (onNext) {
+      onNext();
     }
   };
   
@@ -297,10 +279,10 @@ export function MidDayCheckInForm({
             )}
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={externalIsSubmitting}
               className={onBack ? "ml-auto" : "w-full"}
             >
-              {isSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Mid-day Check-In'}
+              {externalIsSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Mid-day Check-In'}
             </Button>
           </div>
         </form>
