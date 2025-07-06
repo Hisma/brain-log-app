@@ -1,8 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useRef, useState, useCallback } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 // Define the User type
 export interface User {
@@ -59,10 +58,40 @@ export function useAuth() {
 // Provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, status, update: updateSession } = useSession();
-  const router = useRouter();
   const [sessionExpired, setSessionExpired] = useState(false);
   const lastActivityTime = useRef(Date.now());
   const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Session refresh function (moved before useEffect to avoid hoisting issues)
+  const refreshSession = useCallback(async (forceReload = false): Promise<boolean> => {
+    try {
+      if (!session) return false;
+      
+      // Call NextAuth's update function to refresh the session
+      const updatedSession = await updateSession();
+      
+      // Reset session expired state if refresh was successful
+      if (updatedSession) {
+        setSessionExpired(false);
+        
+        // Force a reload of the page to ensure all components reflect the latest session state
+        // This is especially important after making changes to the site
+        if (forceReload && typeof window !== 'undefined') {
+          // Add a small delay to ensure the session update is complete
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Session refresh error:', error);
+      return false;
+    }
+  }, [session, updateSession, setSessionExpired]);
   
   // Session activity tracker
   useEffect(() => {
@@ -119,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearInterval(sessionTimeoutRef.current);
       }
     };
-  }, [session, sessionExpired]);
+  }, [session, sessionExpired, refreshSession]);
 
   // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
@@ -201,36 +230,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Session refresh function
-  const refreshSession = async (forceReload = false): Promise<boolean> => {
-    try {
-      if (!session) return false;
-      
-      // Call NextAuth's update function to refresh the session
-      const updatedSession = await updateSession();
-      
-      // Reset session expired state if refresh was successful
-      if (updatedSession) {
-        setSessionExpired(false);
-        
-        // Force a reload of the page to ensure all components reflect the latest session state
-        // This is especially important after making changes to the site
-        if (forceReload && typeof window !== 'undefined') {
-          // Add a small delay to ensure the session update is complete
-          setTimeout(() => {
-            window.location.reload();
-          }, 100);
-        }
-        
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Session refresh error:', error);
-      return false;
-    }
-  };
 
   // Create the context value with proper mapping for displayName and username
   const value = {

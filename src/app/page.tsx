@@ -23,7 +23,7 @@ export default function HomePage() {
         try {
           setIsLoading(true);
           const dailyLogs = await dailyLogService.getRecent(user.id, 3);
-          const weeklyReflections = await weeklyReflectionService.getRecent(user.id, 1);
+          const weeklyReflections = await weeklyReflectionService.getRecent(1);
           
           setRecentDailyLogs(dailyLogs);
           setRecentWeeklyReflections(weeklyReflections);

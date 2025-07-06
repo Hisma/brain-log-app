@@ -6,24 +6,22 @@ import { Lightbulb, RefreshCw } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 
 interface WeeklyInsightCardProps {
-  weeklyReflectionId: number
-  startDate: Date
-  endDate: Date
+  weekStartDate: Date
+  weekEndDate: Date
   insightText: string
   onGenerateInsight: () => void
   isLoading: boolean
 }
 
 function WeeklyInsightCard({
-  weeklyReflectionId,
-  startDate,
-  endDate,
+  weekStartDate,
+  weekEndDate,
   insightText,
   onGenerateInsight,
   isLoading
 }: WeeklyInsightCardProps) {
   // Format date range (e.g., "May 12 - May 18, 2025")
-  const dateRange = `${format(startDate, "MMMM d")} - ${format(endDate, "MMMM d, yyyy")}`;
+  const dateRange = `${format(weekStartDate, "MMMM d")} - ${format(weekEndDate, "MMMM d, yyyy")}`;
 
   return (
     <Card>

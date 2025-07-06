@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { DailyLog, WeeklyReflection } from '@prisma/client';
 import prisma from '@/lib/prisma';
 
+
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -248,9 +249,9 @@ ${dailyLogs.map(log => {
   * Rumination level: ${log.ruminationLevel}/10
   * Overall mood: ${log.overallMood}/10
   * Day rating: ${log.dayRating || 'Not specified'}/10
-  * Met physical activity goals: ${(log as any).metPhysicalActivityGoals ? 'Yes' : 'No'}
-  * Met dietary goals: ${(log as any).metDietaryGoals ? 'Yes' : 'No'}
-  * Never felt excessively isolated: ${(log as any).neverFeltIsolated ? 'Yes' : 'No'}`;
+  * Met physical activity goals: ${(log as DailyLog & { metPhysicalActivityGoals?: boolean }).metPhysicalActivityGoals ? 'Yes' : 'No'}
+  * Met dietary goals: ${(log as DailyLog & { metDietaryGoals?: boolean }).metDietaryGoals ? 'Yes' : 'No'}
+  * Never felt excessively isolated: ${(log as DailyLog & { neverFeltIsolated?: boolean }).neverFeltIsolated ? 'Yes' : 'No'}`;
 }).join('\n\n')}`;
   } else {
     dailyLogsSummary = "No daily logs were completed during this week.";
@@ -269,9 +270,9 @@ Week Challenges: ${weeklyReflection.weekChallenges || 'None reported'}
 Lessons Learned: ${weeklyReflection.lessonsLearned || 'None reported'}
 Next Week Focus: ${weeklyReflection.nextWeekFocus || 'Not specified'}
 Questioned Leaving Job: ${weeklyReflection.questionedLeavingJob ? 'Yes' : 'No'}
-Gym Days This Week: ${(weeklyReflection as any).gymDaysCount || 0}/7
-Diet Rating (1-10): ${(weeklyReflection as any).dietRating || 'Not specified'}
-Memorable Family Activities: ${(weeklyReflection as any).memorableFamilyActivities || 'None reported'}
+Gym Days This Week: ${(weeklyReflection as WeeklyReflection & { gymDaysCount?: number }).gymDaysCount || 0}/7
+Diet Rating (1-10): ${(weeklyReflection as WeeklyReflection & { dietRating?: number }).dietRating || 'Not specified'}
+Memorable Family Activities: ${(weeklyReflection as WeeklyReflection & { memorableFamilyActivities?: string }).memorableFamilyActivities || 'None reported'}
 
 ${dailyLogsSummary}
 

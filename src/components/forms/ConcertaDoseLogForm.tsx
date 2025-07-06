@@ -3,12 +3,18 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
-import { updateConcertaDoseLog } from '@/lib/services/dailyLogService';
+interface ConcertaDoseLogData {
+  medicationTaken: boolean;
+  medicationTakenAt?: Date;
+  medicationDose?: number;
+  ateWithinHour?: boolean;
+  firstHourFeeling?: string;
+  reasonForSkipping?: string;
+}
 
 interface ConcertaDoseLogFormProps {
   initialValues?: {
@@ -20,8 +26,7 @@ interface ConcertaDoseLogFormProps {
     reasonForSkipping?: string;
   };
   isUpdate?: boolean;
-  dailyLogId?: number;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: ConcertaDoseLogData) => void;
   onNext?: () => void;
   onBack?: () => void;
   isSubmitting?: boolean;
@@ -30,7 +35,6 @@ interface ConcertaDoseLogFormProps {
 export function ConcertaDoseLogForm({ 
   initialValues, 
   isUpdate = false,
-  dailyLogId,
   onSubmit, 
   onNext, 
   onBack,

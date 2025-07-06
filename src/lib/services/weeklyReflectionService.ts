@@ -80,7 +80,7 @@ export async function getWeeklyReflectionByDateRange(userId: number, startDate: 
 /**
  * Get all weekly reflections for a user
  */
-export async function getAllWeeklyReflections(userId: number) {
+export async function getAllWeeklyReflections() {
   try {
     return await get<WeeklyReflection[]>('weekly-reflections');
   } catch (error) {
@@ -137,7 +137,7 @@ export async function deleteWeeklyReflection(userId: number, id: number) {
 /**
  * Get the most recent weekly reflection for a user
  */
-export async function getMostRecentWeeklyReflection(userId: number) {
+export async function getMostRecentWeeklyReflection() {
   try {
     const reflections = await get<WeeklyReflection[]>('weekly-reflections');
     
@@ -160,7 +160,7 @@ export async function getMostRecentWeeklyReflection(userId: number) {
 /**
  * Get weekly reflections for a specific month for a user
  */
-export async function getWeeklyReflectionsForMonth(userId: number, year: number, month: number) {
+export async function getWeeklyReflectionsForMonth(year: number, month: number) {
   try {
     // Create date range for the month
     const startDate = new Date(year, month, 1);
@@ -184,7 +184,7 @@ export async function getWeeklyReflectionsForMonth(userId: number, year: number,
 /**
  * Get average mental state rating over time for a user
  */
-export async function getAverageMentalStateRating(userId: number) {
+export async function getAverageMentalStateRating() {
   try {
     const reflections = await get<WeeklyReflection[]>('weekly-reflections');
     
@@ -212,7 +212,7 @@ export async function getAverageMentalStateRating(userId: number) {
 /**
  * Get average weekly rating over time for a user
  */
-export async function getAverageWeeklyRating(userId: number) {
+export async function getAverageWeeklyRating() {
   try {
     const reflections = await get<WeeklyReflection[]>('weekly-reflections');
     
@@ -242,7 +242,7 @@ export async function getAverageWeeklyRating(userId: number) {
 /**
  * Get recent weekly reflections for a user
  */
-export async function getRecent(userId: number, limit: number) {
+export async function getRecent(limit: number) {
   try {
     const reflections = await get<WeeklyReflection[]>('weekly-reflections');
     

@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { updateAfternoonCheckIn } from '@/lib/services/dailyLogService';
 
 interface AfternoonCheckInFormProps {
   initialValues?: {
@@ -25,8 +24,17 @@ interface AfternoonCheckInFormProps {
     overextended?: string;
   };
   isUpdate?: boolean;
-  dailyLogId?: number;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: {
+    afternoonSnack?: string;
+    isCrashing: boolean;
+    crashSymptoms?: string;
+    anxietyLevel?: number;
+    isFeeling?: string;
+    hadTriggeringInteraction: boolean;
+    interactionDetails?: string;
+    selfWorthTiedToPerformance?: string;
+    overextended?: string;
+  }) => void;
   onNext?: () => void;
   onBack?: () => void;
   isSubmitting?: boolean;
@@ -35,7 +43,6 @@ interface AfternoonCheckInFormProps {
 export function AfternoonCheckInForm({ 
   initialValues, 
   isUpdate = false,
-  dailyLogId,
   onSubmit, 
   onNext, 
   onBack,
@@ -44,8 +51,6 @@ export function AfternoonCheckInForm({
   const [afternoonSnack, setAfternoonSnack] = useState(initialValues?.afternoonSnack || '');
   const [isCrashing, setIsCrashing] = useState(initialValues?.isCrashing || false);
   const [crashSymptoms, setCrashSymptoms] = useState(initialValues?.crashSymptoms || '');
-  const [secondDoseTaken, setSecondDoseTaken] = useState(initialValues?.secondDoseTaken || false);
-  const [secondDoseTime, setSecondDoseTime] = useState<Date | undefined>(initialValues?.secondDoseTime);
   const [anxietyLevel, setAnxietyLevel] = useState(initialValues?.anxietyLevel || 3);
   const [isFeeling, setIsFeeling] = useState(initialValues?.isFeeling || '');
   const [hadTriggeringInteraction, setHadTriggeringInteraction] = useState(initialValues?.hadTriggeringInteraction || false);
@@ -59,8 +64,6 @@ export function AfternoonCheckInForm({
       afternoonSnack,
       isCrashing,
       crashSymptoms: isCrashing ? crashSymptoms : '',
-      secondDoseTaken,
-      secondDoseTime: secondDoseTaken ? secondDoseTime : undefined,
       anxietyLevel,
       isFeeling,
       hadTriggeringInteraction,

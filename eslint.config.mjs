@@ -1,6 +1,7 @@
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { FlatCompat } from "@eslint/eslintrc";
+import unusedImports from "eslint-plugin-unused-imports";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,13 +13,16 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    plugins: {
+      "unused-imports": unusedImports,
+    },
     rules: {
       // Convert strict errors to warnings for development-friendly linting
-      "@typescript-eslint/no-unused-vars": [
+      "@typescript-eslint/no-unused-vars": "off", // Turn off the base rule
+      "unused-imports/no-unused-imports": "warn",
+      "unused-imports/no-unused-vars": [
         "warn",
         { 
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_",
           "ignoreRestSiblings": true
         }
       ],

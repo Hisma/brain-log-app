@@ -7,12 +7,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
-import { createWeeklyReflection } from '@/lib/services/weeklyReflectionService';
 
 interface WeeklyReflectionFormProps {
   startDate: Date;
   endDate: Date;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: {
+    weekRating: number;
+    mentalState: string;
+    weekHighlights: string;
+    weekChallenges: string;
+    lessonsLearned: string;
+    nextWeekFocus: string;
+    questionedLeavingJob: boolean;
+    gymDaysCount: number;
+    dietRating: number;
+    memorableFamilyActivities: string;
+  }) => void;
   onBack?: () => void;
   isSubmitting?: boolean;
 }

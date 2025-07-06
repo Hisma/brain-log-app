@@ -29,7 +29,7 @@ export function DailyLogOverview({ date, userId, onNavigate, dailyLogId }: Daily
         
         // If we have a dailyLogId, use it to fetch the log directly
         if (dailyLogId) {
-          log = await getDailyLogById(userId, dailyLogId);
+          log = await getDailyLogById(dailyLogId);
         } else {
           // Otherwise, fetch by date
           // Use getDailyLogByDate which now uses the improved timezone-aware date comparison
@@ -65,7 +65,7 @@ export function DailyLogOverview({ date, userId, onNavigate, dailyLogId }: Daily
             
             // Fetch the updated log
             if (dailyLogId) {
-              const updatedLog = await getDailyLogById(userId, dailyLogId);
+              const updatedLog = await getDailyLogById(dailyLogId);
               setDailyLog(updatedLog);
             } else {
               const updatedLog = await getDailyLogByDate(userId, date);

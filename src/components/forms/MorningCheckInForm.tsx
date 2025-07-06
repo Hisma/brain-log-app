@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { createMorningCheckIn, updateMorningCheckIn } from '@/lib/services/dailyLogService';
 
 interface MorningCheckInFormProps {
   initialValues?: {
@@ -19,8 +18,14 @@ interface MorningCheckInFormProps {
     breakfast?: string;
   };
   isUpdate?: boolean;
-  dailyLogId?: number;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: {
+    sleepHours: number;
+    sleepQuality: number;
+    dreams: string;
+    morningMood: number;
+    physicalStatus: string;
+    breakfast: string;
+  }) => void;
   onNext?: () => void;
   onBack?: () => void;
   isSubmitting?: boolean;
@@ -29,7 +34,6 @@ interface MorningCheckInFormProps {
 export function MorningCheckInForm({ 
   initialValues, 
   isUpdate = false,
-  dailyLogId,
   onSubmit, 
   onNext,
   onBack,

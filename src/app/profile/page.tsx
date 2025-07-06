@@ -9,6 +9,13 @@ import { updateUserProfile, updateUserPassword } from '@/lib/services/userServic
 import { useSession } from 'next-auth/react';
 import { TimezoneSelector } from '@/components/timezone-selector';
 
+// Define proper Error interface for better type safety
+interface ApiError {
+  message: string;
+  status?: number;
+  code?: string;
+}
+
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, refreshSession } = useAuth();
   const router = useRouter();
@@ -72,8 +79,9 @@ export default function ProfilePage() {
       await refreshSession();
       
       setMessage(`Profile updated successfully. Display name is now "${updatedUser.displayName}"`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
+    } catch (err: unknown) {
+      const error = err as ApiError;
+      setError(error.message || 'Failed to update profile');
       console.error('Profile update error:', err);
     } finally {
       setIsUpdating(false);
@@ -115,8 +123,9 @@ export default function ProfilePage() {
       setConfirmPassword('');
       
       setMessage('Password updated successfully');
-    } catch (err: any) {
-      setError(err.message || 'Failed to update password');
+    } catch (err: unknown) {
+      const error = err as ApiError;
+      setError(error.message || 'Failed to update password');
       console.error('Password update error:', err);
     } finally {
       setIsUpdating(false);

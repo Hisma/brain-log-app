@@ -43,7 +43,7 @@ export default function WeeklyReflectionPage() {
       if (user) {
         try {
           setIsLoadingReflections(true);
-          const reflections = await weeklyReflectionService.getRecent(user.id, 10);
+          const reflections = await weeklyReflectionService.getRecent(10);
           setWeeklyReflections(reflections);
         } catch (error) {
           console.error('Error fetching weekly reflections:', error);
@@ -171,7 +171,7 @@ export default function WeeklyReflectionPage() {
       setIsViewModalOpen(false);
       
       // Refresh the reflections list
-      const updatedReflections = await weeklyReflectionService.getRecent(user.id, 10);
+      const updatedReflections = await weeklyReflectionService.getRecent(10);
       setWeeklyReflections(updatedReflections);
     } catch (error) {
       console.error('Error deleting reflection:', error);
@@ -202,7 +202,7 @@ export default function WeeklyReflectionPage() {
               Weekly reflections help you track your progress and identify patterns over time:
             </p>
             <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-2 mb-4">
-              <li>Reflect on your week's highlights and challenges</li>
+              <li>Reflect on your week&apos;s highlights and challenges</li>
               <li>Identify lessons learned and areas for growth</li>
               <li>Set intentions for the upcoming week</li>
               <li>Track your mental and physical well-being</li>

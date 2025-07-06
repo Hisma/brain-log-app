@@ -2,11 +2,22 @@
 
 import { useAuth } from '@/lib/auth/AuthContext';
 
+// Define proper types for API requests and responses
+export interface ApiRequestData {
+  [key: string]: unknown;
+}
+
+export interface ApiResponse<T = unknown> {
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
 // Define the API client interface
 export interface ApiClient {
   get: <T>(url: string, options?: RequestInit) => Promise<T>;
-  post: <T>(url: string, data: any, options?: RequestInit) => Promise<T>;
-  put: <T>(url: string, data: any, options?: RequestInit) => Promise<T>;
+  post: <T>(url: string, data: ApiRequestData, options?: RequestInit) => Promise<T>;
+  put: <T>(url: string, data: ApiRequestData, options?: RequestInit) => Promise<T>;
   delete: <T>(url: string, options?: RequestInit) => Promise<T>;
 }
 
@@ -51,7 +62,7 @@ export function createBasicApiClient(): ApiClient {
       return response.json();
     },
     
-    post: async <T>(url: string, data: any, options: RequestInit = {}): Promise<T> => {
+    post: async <T>(url: string, data: ApiRequestData, options: RequestInit = {}): Promise<T> => {
       // Ensure the URL starts with /api/
       const apiUrl = url.startsWith('/api/') ? url : `/api/${url}`;
       
@@ -75,7 +86,7 @@ export function createBasicApiClient(): ApiClient {
       return response.json();
     },
     
-    put: async <T>(url: string, data: any, options: RequestInit = {}): Promise<T> => {
+    put: async <T>(url: string, data: ApiRequestData, options: RequestInit = {}): Promise<T> => {
       // Ensure the URL starts with /api/
       const apiUrl = url.startsWith('/api/') ? url : `/api/${url}`;
       
@@ -168,7 +179,7 @@ export function createAuthApiClient(refreshSession: (forceReload?: boolean) => P
       return response.json();
     },
     
-    post: async <T>(url: string, data: any, options: RequestInit = {}): Promise<T> => {
+    post: async <T>(url: string, data: ApiRequestData, options: RequestInit = {}): Promise<T> => {
       // Ensure the URL starts with /api/
       const apiUrl = url.startsWith('/api/') ? url : `/api/${url}`;
       
@@ -192,7 +203,7 @@ export function createAuthApiClient(refreshSession: (forceReload?: boolean) => P
       return response.json();
     },
     
-    put: async <T>(url: string, data: any, options: RequestInit = {}): Promise<T> => {
+    put: async <T>(url: string, data: ApiRequestData, options: RequestInit = {}): Promise<T> => {
       // Ensure the URL starts with /api/
       const apiUrl = url.startsWith('/api/') ? url : `/api/${url}`;
       

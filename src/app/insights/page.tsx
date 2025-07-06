@@ -217,7 +217,6 @@ export default function InsightsPage() {
         <div className="md:col-span-2">
           {selectedLog ? (
             <DailyInsightCard
-              dailyLogId={parseInt(selectedLogId)}
               date={new Date(selectedLog.date)}
               insightText={currentInsight}
               onGenerateInsight={handleGenerateInsight}

@@ -6,7 +6,6 @@ import { Lightbulb, RefreshCw } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 
 interface DailyInsightCardProps {
-  dailyLogId: number
   date: Date
   insightText: string
   onGenerateInsight: () => void
@@ -14,7 +13,6 @@ interface DailyInsightCardProps {
 }
 
 function DailyInsightCard({
-  dailyLogId,
   date,
   insightText,
   onGenerateInsight,

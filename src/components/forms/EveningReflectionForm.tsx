@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
-import { updateEveningReflection } from '@/lib/services/dailyLogService';
 
 interface EveningReflectionFormProps {
   initialValues?: {
@@ -30,8 +29,23 @@ interface EveningReflectionFormProps {
     neverFeltIsolated?: boolean;
   };
   isUpdate?: boolean;
-  dailyLogId?: number;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: {
+    dinner?: string;
+    overallMood: number;
+    sleepiness?: number;
+    medicationEffectiveness?: string;
+    helpfulFactors?: string;
+    distractingFactors?: string;
+    thoughtForTomorrow?: string;
+    dayRating?: number;
+    accomplishments?: string;
+    challenges?: string;
+    gratitude?: string;
+    improvements?: string;
+    metPhysicalActivityGoals?: boolean;
+    metDietaryGoals?: boolean;
+    neverFeltIsolated?: boolean;
+  }) => void;
   onNext?: () => void;
   onBack?: () => void;
   isSubmitting?: boolean;
@@ -40,7 +54,6 @@ interface EveningReflectionFormProps {
 export function EveningReflectionForm({ 
   initialValues, 
   isUpdate = false,
-  dailyLogId,
   onSubmit, 
   onNext,
   onBack,
@@ -247,7 +260,7 @@ export function EveningReflectionForm({
         
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="accomplishments">
-              Today's Accomplishments
+              Today&apos;s Accomplishments
             </label>
             <Textarea 
               id="accomplishments"
@@ -260,7 +273,7 @@ export function EveningReflectionForm({
         
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="challenges">
-              Today's Challenges
+              Today&apos;s Challenges
             </label>
             <Textarea 
               id="challenges"
@@ -312,7 +325,7 @@ export function EveningReflectionForm({
           
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="tomorrow-plan">
-              Tomorrow's Plan
+              Tomorrow&apos;s Plan
             </label>
             <Textarea 
               id="tomorrow-plan"

@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
-import { updateMidDayCheckIn } from '@/lib/services/dailyLogService';
 
 interface MidDayCheckInFormProps {
   initialValues?: {
@@ -22,8 +21,17 @@ interface MidDayCheckInFormProps {
   };
   isUpdate?: boolean;
   dailyLogId?: number;
-  onSubmit?: (data: any) => void;
-  onNext?: () => void;
+  onSubmit?: (data: {
+    lunch?: string;
+    focusLevel: number;
+    energyLevel: number;
+    ruminationLevel: number;
+    currentActivity?: string;
+    distractions?: string;
+    hadEmotionalEvent?: boolean;
+    emotionalEvent?: string;
+    copingStrategies?: string;
+  }) => void;
   onBack?: () => void;
   isSubmitting?: boolean;
 }
@@ -31,9 +39,7 @@ interface MidDayCheckInFormProps {
 export function MidDayCheckInForm({ 
   initialValues, 
   isUpdate = false,
-  dailyLogId,
   onSubmit, 
-  onNext, 
   onBack,
   isSubmitting: externalIsSubmitting = false
 }: MidDayCheckInFormProps) {
@@ -61,10 +67,6 @@ export function MidDayCheckInForm({
     
     if (onSubmit) {
       onSubmit(data);
-    }
-    
-    if (onNext) {
-      onNext();
     }
   };
   
@@ -282,7 +284,7 @@ export function MidDayCheckInForm({
               disabled={externalIsSubmitting}
               className={onBack ? "ml-auto" : "w-full"}
             >
-              {externalIsSubmitting ? 'Saving...' : isUpdate ? 'Update' : onNext ? 'Next' : 'Save Mid-day Check-In'}
+              {externalIsSubmitting ? 'Saving...' : isUpdate ? 'Update' : 'Save Mid-day Check-In'}
             </Button>
           </div>
         </form>

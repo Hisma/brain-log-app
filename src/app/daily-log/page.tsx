@@ -10,7 +10,7 @@ import { ConcertaDoseLogForm } from '@/components/forms/ConcertaDoseLogForm';
 import { MidDayCheckInForm } from '@/components/forms/MidDayCheckInForm';
 import { AfternoonCheckInForm } from '@/components/forms/AfternoonCheckInForm';
 import { EveningReflectionForm } from '@/components/forms/EveningReflectionForm';
-import { dailyLogService, DailyLog } from '@/lib/services/dailyLogService';
+import { dailyLogService, DailyLog, MorningCheckInData, ConcertaDoseLogData, MidDayCheckInData, AfternoonCheckInData, EveningReflectionData } from '@/lib/services/dailyLogService';
 import { formatDate } from '@/lib/utils/index';
 import { formatInTimezone, getCurrentDate, isSameDay } from '@/lib/utils/timezone';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -165,7 +165,7 @@ export default function DailyLogPage() {
     if (!dailyLogId || !user) return false;
     
     try {
-      const log = await dailyLogService.getDailyLogById(user.id, dailyLogId);
+      const log = await dailyLogService.getDailyLogById(dailyLogId);
       if (log && log.isComplete) {
         // All sections are completed, redirect to home page
         router.push('/');
@@ -179,17 +179,15 @@ export default function DailyLogPage() {
   };
 
   // Handle form submissions
-  const handleMorningSubmit = async (data: typeof morningData) => {
+  const handleMorningSubmit = async (data: MorningCheckInData) => {
     if (!user) return;
     
     setIsSubmitting(true);
     
     try {
-      setMorningData(data);
-      
       // If we're creating a new log or updating an existing one
       if (isUpdate && dailyLogId) {
-        await dailyLogService.updateMorningCheckIn(user.id, dailyLogId, data, true);
+        await dailyLogService.updateMorningCheckIn(user.id, dailyLogId, data);
       } else {
         // Check if a log already exists for today before creating a new one
         const logExistsForToday = await dailyLogService.checkLogExistsForToday(user.id, user.timezone);
@@ -197,7 +195,7 @@ export default function DailyLogPage() {
         if (logExistsForToday) {
           // If a log exists, get it and set it as the current log
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -207,7 +205,7 @@ export default function DailyLogPage() {
             setIsUpdate(true);
             
             // Now update the existing log
-            await dailyLogService.updateMorningCheckIn(user.id, todayLog.id, data, true);
+            await dailyLogService.updateMorningCheckIn(user.id, todayLog.id, data);
           } else {
             throw new Error('A log already exists for today but could not be retrieved.');
           }
@@ -242,7 +240,7 @@ export default function DailyLogPage() {
         // Try to load the existing log
         try {
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -290,14 +288,12 @@ export default function DailyLogPage() {
     }
   };
 
-  const handleMedicationSubmit = async (data: typeof medicationData) => {
+  const handleMedicationSubmit = async (data: ConcertaDoseLogData) => {
     if (!user) return;
     
     setIsSubmitting(true);
     
     try {
-      setMedicationData(data);
-      
       // If we don't have a daily log ID yet, we need to create one first
       let logId = dailyLogId;
       if (!logId) {
@@ -307,7 +303,7 @@ export default function DailyLogPage() {
         if (logExistsForToday) {
           // If a log exists, get it and set it as the current log
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -351,7 +347,7 @@ export default function DailyLogPage() {
       }
       
       // Update the medication data
-      await dailyLogService.updateConcertaDoseLog(user.id, logId, data, isUpdate);
+      await dailyLogService.updateConcertaDoseLog(user.id, logId, data);
       
       // Check if all sections are completed
       const isComplete = await checkAllSectionsCompleted();
@@ -370,7 +366,7 @@ export default function DailyLogPage() {
         // Try to load the existing log
         try {
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -418,14 +414,12 @@ export default function DailyLogPage() {
     }
   };
 
-  const handleMiddaySubmit = async (data: typeof middayData) => {
+  const handleMiddaySubmit = async (data: MidDayCheckInData) => {
     if (!user) return;
     
     setIsSubmitting(true);
     
     try {
-      setMiddayData(data);
-      
       // If we don't have a daily log ID yet, we need to create one first
       let logId = dailyLogId;
       if (!logId) {
@@ -435,7 +429,7 @@ export default function DailyLogPage() {
         if (logExistsForToday) {
           // If a log exists, get it and set it as the current log
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -479,7 +473,7 @@ export default function DailyLogPage() {
       }
       
       // Update the midday data
-      await dailyLogService.updateMidDayCheckIn(user.id, logId, data, isUpdate);
+      await dailyLogService.updateMidDayCheckIn(user.id, logId, data);
       
       // Check if all sections are completed
       const isComplete = await checkAllSectionsCompleted();
@@ -498,7 +492,7 @@ export default function DailyLogPage() {
         // Try to load the existing log
         try {
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -546,14 +540,12 @@ export default function DailyLogPage() {
     }
   };
 
-  const handleAfternoonSubmit = async (data: typeof afternoonData) => {
+  const handleAfternoonSubmit = async (data: AfternoonCheckInData) => {
     if (!user) return;
     
     setIsSubmitting(true);
     
     try {
-      setAfternoonData(data);
-      
       // If we don't have a daily log ID yet, we need to create one first
       let logId = dailyLogId;
       if (!logId) {
@@ -563,7 +555,7 @@ export default function DailyLogPage() {
         if (logExistsForToday) {
           // If a log exists, get it and set it as the current log
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -607,7 +599,7 @@ export default function DailyLogPage() {
       }
       
       // Update the afternoon data
-      await dailyLogService.updateAfternoonCheckIn(user.id, logId, data, isUpdate);
+      await dailyLogService.updateAfternoonCheckIn(user.id, logId, data);
       
       // Check if all sections are completed
       const isComplete = await checkAllSectionsCompleted();
@@ -626,7 +618,7 @@ export default function DailyLogPage() {
         // Try to load the existing log
         try {
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -674,14 +666,12 @@ export default function DailyLogPage() {
     }
   };
 
-  const handleEveningSubmit = async (data: typeof eveningData) => {
+  const handleEveningSubmit = async (data: EveningReflectionData) => {
     if (!user) return;
     
     setIsSubmitting(true);
     
     try {
-      setEveningData(data);
-      
       // If we don't have a daily log ID yet, we need to create one first
       let logId = dailyLogId;
       if (!logId) {
@@ -691,7 +681,7 @@ export default function DailyLogPage() {
         if (logExistsForToday) {
           // If a log exists, get it and set it as the current log
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -735,7 +725,7 @@ export default function DailyLogPage() {
       }
       
       // Update the evening data
-      await dailyLogService.updateEveningReflection(user.id, logId, data, isUpdate);
+      await dailyLogService.updateEveningReflection(user.id, logId, data);
       
       // Check if all sections are completed
       const isComplete = await checkAllSectionsCompleted();
@@ -754,7 +744,7 @@ export default function DailyLogPage() {
         // Try to load the existing log
         try {
           const today = getCurrentDate(user.timezone);
-          const logs = await dailyLogService.getAllDailyLogs(user.id);
+          const logs = await dailyLogService.getAllDailyLogs();
           const todayLog = logs.find(log => 
             isSameDay(new Date(log.date), today, user.timezone)
           );
@@ -1014,7 +1004,6 @@ export default function DailyLogPage() {
           <MorningCheckInForm 
             initialValues={morningData}
             isUpdate={isUpdate}
-            dailyLogId={dailyLogId || undefined}
             onSubmit={handleMorningSubmit}
             onBack={() => setCurrentSection('overview')}
             isSubmitting={isSubmitting}
@@ -1023,7 +1012,6 @@ export default function DailyLogPage() {
           <ConcertaDoseLogForm 
             initialValues={medicationData}
             isUpdate={isUpdate}
-            dailyLogId={dailyLogId || undefined}
             onSubmit={handleMedicationSubmit}
             onBack={() => setCurrentSection('overview')}
             isSubmitting={isSubmitting}
@@ -1032,7 +1020,6 @@ export default function DailyLogPage() {
           <MidDayCheckInForm 
             initialValues={middayData}
             isUpdate={isUpdate}
-            dailyLogId={dailyLogId || undefined}
             onSubmit={handleMiddaySubmit}
             onBack={() => setCurrentSection('overview')}
             isSubmitting={isSubmitting}
@@ -1041,7 +1028,6 @@ export default function DailyLogPage() {
           <AfternoonCheckInForm 
             initialValues={afternoonData}
             isUpdate={isUpdate}
-            dailyLogId={dailyLogId || undefined}
             onSubmit={handleAfternoonSubmit}
             onBack={() => setCurrentSection('overview')}
             isSubmitting={isSubmitting}
@@ -1050,7 +1036,6 @@ export default function DailyLogPage() {
           <EveningReflectionForm 
             initialValues={eveningData}
             isUpdate={isUpdate}
-            dailyLogId={dailyLogId || undefined}
             onSubmit={handleEveningSubmit}
             onBack={() => setCurrentSection('overview')}
             isSubmitting={isSubmitting}

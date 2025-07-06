@@ -1,7 +1,7 @@
 'use client';
 
 import { get, post, put, del } from '@/lib/services/api';
-import { normalizeDate, isSameDay, getCurrentDate, formatInTimezone } from '@/lib/utils/timezone';
+import { normalizeDate, isSameDay, getCurrentDate } from '@/lib/utils/timezone';
 import { format } from 'date-fns-tz';
 
 // Define the DailyLog type to maintain compatibility with existing code
@@ -216,9 +216,9 @@ export async function createMorningCheckIn(
 /**
  * Update morning check-in data
  */
-export async function updateMorningCheckIn(userId: number, id: number, data: MorningCheckInData, isUpdate = false) {
+export async function updateMorningCheckIn(userId: number, id: number, data: MorningCheckInData) {
   // Get the current log first
-  const log = await getDailyLogById(userId, id);
+  const log = await getDailyLogById(id);
   if (!log) {
     throw new Error('Log not found or unauthorized access');
   }
@@ -246,9 +246,9 @@ export async function updateMorningCheckIn(userId: number, id: number, data: Mor
 /**
  * Update Concerta dose log data
  */
-export async function updateConcertaDoseLog(userId: number, id: number, data: ConcertaDoseLogData, isUpdate = false) {
+export async function updateConcertaDoseLog(userId: number, id: number, data: ConcertaDoseLogData) {
   // Get the current log first
-  const log = await getDailyLogById(userId, id);
+  const log = await getDailyLogById(id);
   if (!log) {
     throw new Error('Log not found or unauthorized access');
   }
@@ -276,9 +276,9 @@ export async function updateConcertaDoseLog(userId: number, id: number, data: Co
 /**
  * Update midday focus and emotion data
  */
-export async function updateMidDayCheckIn(userId: number, id: number, data: MidDayCheckInData, isUpdate = false) {
+export async function updateMidDayCheckIn(userId: number, id: number, data: MidDayCheckInData) {
   // Get the current log first
-  const log = await getDailyLogById(userId, id);
+  const log = await getDailyLogById(id);
   if (!log) {
     throw new Error('Log not found or unauthorized access');
   }
@@ -309,9 +309,9 @@ export async function updateMidDayCheckIn(userId: number, id: number, data: MidD
 /**
  * Update afternoon checkpoint data
  */
-export async function updateAfternoonCheckIn(userId: number, id: number, data: AfternoonCheckInData, isUpdate = false) {
+export async function updateAfternoonCheckIn(userId: number, id: number, data: AfternoonCheckInData) {
   // Get the current log first
-  const log = await getDailyLogById(userId, id);
+  const log = await getDailyLogById(id);
   if (!log) {
     throw new Error('Log not found or unauthorized access');
   }
@@ -342,9 +342,9 @@ export async function updateAfternoonCheckIn(userId: number, id: number, data: A
 /**
  * Update end of day reflection data
  */
-export async function updateEveningReflection(userId: number, id: number, data: EveningReflectionData, isUpdate = false) {
+export async function updateEveningReflection(userId: number, id: number, data: EveningReflectionData) {
   // Get the current log first
-  const log = await getDailyLogById(userId, id);
+  const log = await getDailyLogById(id);
   if (!log) {
     throw new Error('Log not found or unauthorized access');
   }
@@ -383,7 +383,7 @@ export async function updateEveningReflection(userId: number, id: number, data: 
  */
 export async function checkDailyLogCompletion(userId: number, id: number) {
   // Get the current log
-  const log = await getDailyLogById(userId, id);
+  const log = await getDailyLogById(id);
   if (!log) {
     throw new Error('Log not found or unauthorized access');
   }
@@ -409,137 +409,16 @@ export async function checkDailyLogCompletion(userId: number, id: number) {
   return isComplete;
 }
 
-// Legacy methods for backward compatibility
-/**
- * Update medication and routine data (legacy method)
- */
-export async function updateMedicationRoutine(userId: number, id: number, data: {
-  medicationTakenAt: string;
-  medicationDose: number;
-  ateWithinHour: boolean;
-  firstHourFeeling: string;
-}) {
-  // Get the current log first
-  const log = await getDailyLogById(userId, id);
-  if (!log) {
-    throw new Error('Log not found or unauthorized access');
-  }
-  
-  // Convert to new format
-  const concertaData: ConcertaDoseLogData = {
-    medicationTaken: true,
-    medicationTakenAt: new Date(data.medicationTakenAt),
-    medicationDose: data.medicationDose,
-    ateWithinHour: data.ateWithinHour,
-    firstHourFeeling: data.firstHourFeeling
-  };
-  
-  return updateConcertaDoseLog(userId, id, concertaData);
-}
-
-/**
- * Update midday focus and emotion data (legacy method)
- */
-export async function updateMiddayFocusEmotion(userId: number, id: number, data: {
-  focusLevel: number;
-  energyLevel: number;
-  ruminationLevel: number;
-  mainTrigger: string;
-  responseMethod: string[];
-}) {
-  // Get the current log first
-  const log = await getDailyLogById(userId, id);
-  if (!log) {
-    throw new Error('Log not found or unauthorized access');
-  }
-  
-  // Convert to new format
-  const midDayData: MidDayCheckInData = {
-    focusLevel: data.focusLevel,
-    energyLevel: data.energyLevel,
-    ruminationLevel: data.ruminationLevel,
-    hadEmotionalEvent: data.mainTrigger ? true : false,
-    emotionalEvent: data.mainTrigger || '',
-    copingStrategies: data.responseMethod ? data.responseMethod.join(', ') : ''
-  };
-  
-  return updateMidDayCheckIn(userId, id, midDayData);
-}
-
-/**
- * Update afternoon checkpoint data (legacy method)
- */
-export async function updateAfternoonCheckpoint(userId: number, id: number, data: {
-  hadTriggeringInteraction: boolean;
-  interactionDetails: string;
-  selfWorthTiedToPerformance: string;
-  overextended: string;
-}) {
-  // Get the current log first
-  const log = await getDailyLogById(userId, id);
-  if (!log) {
-    throw new Error('Log not found or unauthorized access');
-  }
-  
-  // Convert to new format
-  const afternoonData: AfternoonCheckInData = {
-    isCrashing: false,
-    hadTriggeringInteraction: data.hadTriggeringInteraction,
-    interactionDetails: data.interactionDetails,
-    selfWorthTiedToPerformance: data.selfWorthTiedToPerformance,
-    overextended: data.overextended
-  };
-  
-  return updateAfternoonCheckIn(userId, id, afternoonData);
-}
-
-/**
- * Update end of day reflection data (legacy method)
- */
-export async function updateEndOfDayReflection(userId: number, id: number, data: {
-  overallMood: number;
-  medicationEffectiveness: string;
-  helpfulFactors: string;
-  distractingFactors: string;
-  thoughtForTomorrow: string;
-  dayRating: number;
-  accomplishments: string;
-  challenges: string;
-  gratitude: string;
-  improvements: string;
-}) {
-  // Get the current log first
-  const log = await getDailyLogById(userId, id);
-  if (!log) {
-    throw new Error('Log not found or unauthorized access');
-  }
-  
-  // Convert to new format
-  const eveningData: EveningReflectionData = {
-    overallMood: data.overallMood,
-    medicationEffectiveness: data.medicationEffectiveness,
-    helpfulFactors: data.helpfulFactors,
-    distractingFactors: data.distractingFactors,
-    thoughtForTomorrow: data.thoughtForTomorrow,
-    dayRating: data.dayRating,
-    accomplishments: data.accomplishments,
-    challenges: data.challenges,
-    gratitude: data.gratitude,
-    improvements: data.improvements
-  };
-  
-  return updateEveningReflection(userId, id, eveningData);
-}
 
 /**
  * Get a daily log by ID
  */
-export async function getDailyLogById(userId: number, id: number) {
+export async function getDailyLogById(id: number) {
   try {
     const response = await get<{ dailyLogs: DailyLog[] }>(`daily-logs?id=${id}`);
     
     // The API returns an array, but we expect a single log or null
-    if (response.dailyLogs && response.dailyLogs.length > 0 && response.dailyLogs[0].userId === userId) {
+    if (response.dailyLogs && response.dailyLogs.length > 0) {
       return response.dailyLogs[0];
     }
     
@@ -588,7 +467,7 @@ export async function getDailyLogByDate(userId: number, date: Date, timezone: st
 /**
  * Get all daily logs for a user
  */
-export async function getAllDailyLogs(userId: number) {
+export async function getAllDailyLogs() {
   try {
     const response = await get<{ dailyLogs: DailyLog[] }>('daily-logs');
     return response.dailyLogs;
@@ -601,7 +480,7 @@ export async function getAllDailyLogs(userId: number) {
 /**
  * Get all completed daily logs for a user
  */
-export async function getCompletedDailyLogs(userId: number) {
+export async function getCompletedDailyLogs() {
   try {
     const response = await get<{ dailyLogs: DailyLog[] }>('daily-logs');
     return response.dailyLogs.filter(log => log.isComplete === true);
@@ -664,7 +543,7 @@ export async function checkLogExistsForToday(userId: number, timezone: string = 
   try {
     // Get the current date in the user's timezone
     const today = getCurrentDate(timezone);
-    const logs = await getAllDailyLogs(userId);
+    const logs = await getAllDailyLogs();
     
     // Format today's date for debugging
     const todayFormatted = format(today, 'yyyy-MM-dd', { timeZone: timezone });
@@ -699,12 +578,6 @@ export const dailyLogService = {
   updateAfternoonCheckIn,
   updateEveningReflection,
   checkDailyLogCompletion,
-  
-  // Legacy methods for backward compatibility
-  updateMedicationRoutine,
-  updateMiddayFocusEmotion,
-  updateAfternoonCheckpoint,
-  updateEndOfDayReflection,
   
   // Utility methods
   getDailyLogById,

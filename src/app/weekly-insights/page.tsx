@@ -219,9 +219,8 @@ export default function WeeklyInsightsPage() {
         <div className="md:col-span-2">
           {selectedReflection ? (
             <WeeklyInsightCard
-              weeklyReflectionId={parseInt(selectedReflectionId)}
-              startDate={new Date(selectedReflection.weekStartDate)}
-              endDate={new Date(selectedReflection.weekEndDate)}
+              weekStartDate={new Date(selectedReflection.weekStartDate)}
+              weekEndDate={new Date(selectedReflection.weekEndDate)}
               insightText={currentInsight}
               onGenerateInsight={handleGenerateInsight}
               isLoading={isLoading}
