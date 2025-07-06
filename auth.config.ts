@@ -6,11 +6,25 @@ import type { JWT } from "next-auth/jwt";
  * This file should NOT import any Node.js dependencies like bcrypt or Prisma
  */
 export const authConfig = {
+  // Trust the NEXTAUTH_URL and any URLs in the VERCEL_URL env var
+  trustHost: true,
   session: { strategy: "jwt" as const },
   pages: {
     signIn: "/login",
     signOut: "/",
     error: "/login",
+  },
+  // Improve cookie handling for Edge Runtime
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
   },
   callbacks: {
     async jwt({ token, user }: { token: JWT; user?: User }) {

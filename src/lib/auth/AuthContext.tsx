@@ -95,6 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Session activity tracker
   useEffect(() => {
+    // Client-side only code
+    if (typeof window === 'undefined') return;
+    
     // Reset session expired state when session changes
     if (session) {
       setSessionExpired(false);
@@ -135,7 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     
     // Set up periodic session check (every 5 minutes)
-    sessionTimeoutRef.current = setInterval(checkSessionStatus, 5 * 60 * 1000);
+    const checkInterval = 5 * 60 * 1000; // 5 minutes
+    sessionTimeoutRef.current = setInterval(checkSessionStatus, checkInterval);
     
     return () => {
       // Clean up event listeners and interval
@@ -153,13 +157,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
+      console.log('Attempting login...');
+      
       const result = await signIn('credentials', {
         username,
         password,
         redirect: false,
       });
       
-      return result?.ok || false;
+      console.log('Login result:', result);
+      
+      if (result?.ok) {
+        console.log('Login successful, updating session...');
+        
+        // Force a session update after successful login
+        // This is critical for Edge Runtime environments where session state might not update automatically
+        try {
+          // Wait a moment for the session to be established
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Update the session state
+          const updatedSession = await updateSession();
+          console.log('Session updated:', !!updatedSession);
+          
+          // Return success
+          return true;
+        } catch (updateError) {
+          console.error('Session update error after login:', updateError);
+          // Still return true since the login itself was successful
+          return true;
+        }
+      }
+      
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -176,6 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Register function
   const register = async (userData: UserRegistrationData): Promise<boolean> => {
     try {
+      console.log('Starting registration process...');
+      
       // Call the API to register a new user
       const response = await fetch('/api/users', {
         method: 'POST',
@@ -196,8 +228,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
       
-      // If registration is successful, log the user in
-      return await login(userData.username, userData.password);
+      console.log('User created successfully, attempting login...');
+      
+      // If registration is successful, log the user in with additional session handling
+      const loginSuccess = await login(userData.username, userData.password);
+      
+      if (loginSuccess) {
+        console.log('Login after registration successful');
+        return true;
+      } else {
+        console.error('Login after registration failed');
+        return false;
+      }
     } catch (error) {
       console.error('Registration error:', error);
       return false;

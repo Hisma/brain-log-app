@@ -38,7 +38,16 @@ export default function LoginPage() {
       const success = await login(username, password);
       
       if (success) {
-        router.push('/');
+        // Add a small delay before redirecting to ensure the session is fully updated
+        // This is especially important in Edge Runtime environments
+        console.log('Login successful, waiting for session to update before redirecting...');
+        
+        // Wait for session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Force a hard navigation instead of client-side navigation
+        // This ensures the page is fully reloaded with the new session
+        window.location.href = '/';
       } else {
         setError('Invalid username or password');
       }

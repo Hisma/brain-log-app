@@ -14,7 +14,7 @@ const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: process.env.NODE_ENV === 'production' 
-        ? [process.env.NEXTAUTH_URL] 
+        ? [process.env.NEXTAUTH_URL, 'brain-log-app.vercel.app'] 
         : ['localhost:3000', '172.18.0.2:3000', '0.0.0.0:3000', '192.168.0.227:3003'],
     },
   },

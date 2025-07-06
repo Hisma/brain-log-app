@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@auth';
+import { auth } from '../../../../../auth';
 
 /**
  * Endpoint to check if the user's session is still valid
