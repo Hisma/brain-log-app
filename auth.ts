@@ -1,78 +1,50 @@
 import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
-import { compare } from "bcryptjs";
-import { JWT } from "next-auth/jwt";
-
-const prisma = new PrismaClient();
+import Credentials from "next-auth/providers/credentials";
+import { authConfig } from "./auth.config";
+import { sql } from "@/lib/neon";
+import { comparePasswords } from "@/lib/crypto";
 
 /**
  * Auth.js v5 configuration
- * This is the main configuration file for Auth.js
- * It exports the auth() function which can be used in both server and client components
+ * This file contains Node.js dependencies and should only be used in API routes
+ * The middleware uses auth.config.ts which is Edge Runtime compatible
  */
+// @ts-expect-error - NextAuth v5 beta has type issues
 export const { auth, handlers, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-    signOut: "/",
-    error: "/login",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      // If user is defined, this is the first sign in
-      if (user) {
-        // Store the ID as a string in the token
-        // The ID comes as a string from the authorize function
-        token.id = user.id;
-        token.timezone = user.timezone || "America/New_York";
-      }
-      
-      return token;
-    },
-    async session({ session, token }: { session: any; token: JWT }) {
-      if (token && session.user) {
-        // Convert the string ID from the token to a number for Prisma compatibility
-        session.user.id = parseInt(String(token.id), 10);
-        session.user.timezone = token.timezone;
-      }
-      
-      return session;
-    },
-  },
+  ...authConfig,
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: "Credentials",
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      // The request parameter is required by NextAuth.js type definition
-      // even though we're not using it in our implementation
-      async authorize(credentials, request) {
+      async authorize(credentials: Record<string, unknown>) {
         if (!credentials?.username || !credentials?.password) {
           return null;
         }
         
-        // Find the user in the database
+        // Find the user in the database using Neon serverless (Edge Runtime compatible)
         const username = credentials.username as string;
-        const user = await prisma.user.findUnique({
-          where: { username },
-        });
+        const users = await sql`
+          SELECT id, username, "passwordHash", "displayName", timezone, theme 
+          FROM "User" 
+          WHERE username = ${username}
+        `;
         
-        // If user doesn't exist or password doesn't match, return null
-        if (!user) {
+        // If user doesn't exist, return null
+        if (users.length === 0) {
           return null;
         }
+        
+        const user = users[0];
         
         // Ensure password and hash are strings
         const password = credentials.password as string;
         const hash = user.passwordHash as string;
         
-        // Compare password with hash
-        if (!(await compare(password, hash))) {
+        // Compare password with hash using our Edge-compatible crypto function
+        if (!(await comparePasswords(password, hash))) {
           return null;
         }
         

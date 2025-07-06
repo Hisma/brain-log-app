@@ -1,5 +1,3 @@
-import { DefaultSession } from "next-auth"
-
 declare module "next-auth" {
   /**
    * Extend the built-in session types
@@ -9,7 +7,10 @@ declare module "next-auth" {
       id: number
       timezone: string
       theme?: string
-    } & DefaultSession["user"]
+      name?: string | null
+      email?: string | null
+      image?: string | null
+    }
   }
 
   /**
@@ -19,6 +20,9 @@ declare module "next-auth" {
     id: string
     timezone: string
     theme?: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
   }
 }
 

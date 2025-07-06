@@ -1,8 +1,11 @@
 /**
  * Utility functions for handling session refresh
+ * Client-side only
  */
 
-import { auth, signIn } from '@auth';
+'use client';
+
+import { getSession, signIn as nextAuthSignIn } from 'next-auth/react';
 
 // Constants for refresh parameters
 const REFRESH_PARAM = 'refreshed';
@@ -17,7 +20,7 @@ const SESSION_LAST_CHECKED = 'session_last_checked';
 export async function refreshSession(forceReload = false): Promise<boolean> {
   try {
     // Check if we have a session
-    const session = await auth();
+    const session = await getSession();
     
     if (!session) {
       return false;
@@ -40,7 +43,7 @@ export async function refreshSession(forceReload = false): Promise<boolean> {
     if (!response.ok) {
       // If the session is invalid, try to refresh it
       // This is a lightweight call that doesn't require credentials
-      const result = await signIn('refresh', { redirect: false });
+      const result = await nextAuthSignIn('credentials', { redirect: false });
       
       // If forceReload is true or the refresh was successful, reload the page
       if (forceReload && result?.ok) {
@@ -72,6 +75,8 @@ export async function refreshSession(forceReload = false): Promise<boolean> {
  * This is useful for components that need to know if they were just refreshed
  */
 export function forceRefresh(): void {
+  if (typeof window === 'undefined') return;
+  
   // Add a query parameter to the URL to indicate a refresh
   const url = new URL(window.location.href);
   url.searchParams.set(REFRESH_PARAM, REFRESH_VALUE);
@@ -112,11 +117,13 @@ export function cleanRefreshParam(): void {
  * Clears any cached session data
  */
 export function clearSessionCache(): void {
+  if (typeof window === 'undefined') return;
+  
   // Clear any session data from localStorage or cookies
-  // This depends on how your app is storing session data
   try {
     // Remove any session-related items from localStorage
     localStorage.removeItem('sessionData');
+    localStorage.removeItem(SESSION_LAST_CHECKED);
     
     // Clear any session cookies
     document.cookie.split(';').forEach(cookie => {

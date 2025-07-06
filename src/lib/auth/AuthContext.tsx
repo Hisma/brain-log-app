@@ -233,13 +233,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Create the context value with proper mapping for displayName and username
   const value = {
-    user: session?.user ? {
-      ...session.user,
+    user: session?.user && session.user.id ? {
       // Ensure the ID is a number for our application's internal use
       id: typeof session.user.id === 'string' ? parseInt(session.user.id, 10) : session.user.id,
       displayName: session.user.name || '', // Map NextAuth's name to our displayName
       username: session.user.email || '', // Map NextAuth's email to our username
-      timezone: session.user.timezone || 'America/New_York', // Default timezone if not provided
+      timezone: (session.user as { timezone?: string }).timezone || 'America/New_York', // Default timezone if not provided
+      theme: (session.user as { theme?: string }).theme,
     } : null,
     isAuthenticated: !!session?.user && !sessionExpired,
     isLoading: status === 'loading',

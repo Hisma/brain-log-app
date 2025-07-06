@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { hashPassword } from '@/lib/crypto';
 
 /**
  * POST /api/users
@@ -30,8 +30,8 @@ export async function POST(request: Request) {
       );
     }
     
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    // Hash password using Edge-compatible Web Crypto API
+    const passwordHash = await hashPassword(password);
     
     // Create user
     const user = await prisma.user.create({

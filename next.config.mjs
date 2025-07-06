@@ -7,7 +7,10 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   // Configure external packages for server components
-  serverExternalPackages: ['bcryptjs', '@prisma/client'],
+  // This works with both Webpack and Turbopack automatically
+  // Note: bcryptjs is only used for legacy password verification and not in Edge Runtime
+  serverExternalPackages: ['@prisma/client'],
+  
   experimental: {
     serverActions: {
       allowedOrigins: process.env.NODE_ENV === 'production' 
