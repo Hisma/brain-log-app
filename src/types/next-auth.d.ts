@@ -1,3 +1,6 @@
+import "next-auth";
+import { UserRole } from "@prisma/client";
+
 declare module "next-auth" {
   /**
    * Extend the built-in session types
@@ -7,6 +10,8 @@ declare module "next-auth" {
       id: number
       timezone: string
       theme?: string
+      role: UserRole
+      isActive: boolean
       name?: string | null
       email?: string | null
       image?: string | null
@@ -20,6 +25,8 @@ declare module "next-auth" {
     id: string
     timezone: string
     theme?: string
+    role: UserRole
+    isActive: boolean
     name?: string | null
     email?: string | null
     image?: string | null
@@ -34,5 +41,7 @@ declare module "next-auth/jwt" {
     id: string
     timezone: string
     theme?: string
+    role: UserRole
+    isActive: boolean
   }
 }

@@ -3,13 +3,15 @@
 import React, { createContext, useContext, ReactNode, useEffect, useRef, useState, useCallback } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 
-// Define the User type
+// Define the User type to match NextAuth session
 export interface User {
   id: number;
   username: string;
   displayName: string;
   theme?: string;
   timezone: string;
+  role: 'PENDING' | 'USER' | 'ADMIN';
+  isActive: boolean;
 }
 
 // Define the shape of our authentication context
@@ -282,6 +284,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: session.user.email || '', // Map NextAuth's email to our username
       timezone: (session.user as { timezone?: string }).timezone || 'America/New_York', // Default timezone if not provided
       theme: (session.user as { theme?: string }).theme,
+      role: (session.user as { role?: 'PENDING' | 'USER' | 'ADMIN' }).role || 'USER',
+      isActive: (session.user as { isActive?: boolean }).isActive ?? true,
     } : null,
     isAuthenticated: !!session?.user && !sessionExpired,
     isLoading: status === 'loading',

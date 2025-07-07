@@ -237,17 +237,17 @@ export async function getAuditLogs(options: AuditLogQueryOptions): Promise<Audit
       `;
     }
     
-    return result.map((row: any) => ({
-      id: row.id,
-      userId: row.userId,
-      action: row.action,
-      resource: row.resource,
-      details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details,
-      ipAddress: row.ipAddress,
-      userAgent: row.userAgent,
-      timestamp: new Date(row.timestamp),
-      username: row.username,
-      displayName: row.displayName,
+    return result.map((row: Record<string, unknown>) => ({
+      id: row.id as number,
+      userId: row.userId as number | null,
+      action: row.action as string,
+      resource: row.resource as string,
+      details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details as Record<string, unknown>,
+      ipAddress: row.ipAddress as string | null,
+      userAgent: row.userAgent as string | null,
+      timestamp: new Date(row.timestamp as string | Date),
+      username: row.username as string | null,
+      displayName: row.displayName as string | null,
     }));
   } catch (error) {
     console.error('Error getting audit logs:', error);
@@ -338,10 +338,10 @@ export async function getAuditLogStats(options: AuditLogStatsOptions): Promise<A
       }
     }
     
-    return result.map((row: any) => ({
-      action: row.action,
-      resource: row.resource,
-      count: parseInt(row.count, 10),
+    return result.map((row: Record<string, unknown>) => ({
+      action: row.action as string,
+      resource: row.resource as string,
+      count: parseInt(row.count as string, 10),
     }));
   } catch (error) {
     console.error('Error getting audit log stats:', error);
@@ -392,17 +392,17 @@ export async function getRecentAuditActivity(userId?: number, limit: number = 10
       `;
     }
     
-    return result.map((row: any) => ({
-      id: row.id,
-      userId: row.userId,
-      action: row.action,
-      resource: row.resource,
-      details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details,
-      ipAddress: row.ipAddress,
-      userAgent: row.userAgent,
-      timestamp: new Date(row.timestamp),
-      username: row.username,
-      displayName: row.displayName,
+    return result.map((row: Record<string, unknown>) => ({
+      id: row.id as number,
+      userId: row.userId as number | null,
+      action: row.action as string,
+      resource: row.resource as string,
+      details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details as Record<string, unknown>,
+      ipAddress: row.ipAddress as string | null,
+      userAgent: row.userAgent as string | null,
+      timestamp: new Date(row.timestamp as string | Date),
+      username: row.username as string | null,
+      displayName: row.displayName as string | null,
     }));
   } catch (error) {
     console.error('Error getting recent audit activity:', error);
