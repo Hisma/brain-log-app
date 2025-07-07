@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 
 // Create a separate Auth.js instance for middleware without database access
 // This follows the recommended approach from the Auth.js Edge Compatibility guide
-// @ts-expect-error - NextAuth v5 beta has type issues
 const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {

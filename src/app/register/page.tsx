@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, FormEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useAuth } from '@/lib/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { getCommonTimezones } from '@/lib/utils/timezone';
 import {
   Select,
@@ -16,197 +18,340 @@ import {
 } from '@/components/ui/select';
 
 export default function RegisterPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [timezone, setTimezone] = useState('America/New_York');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const timezones = getCommonTimezones();
-  
-  const { register, isAuthenticated } = useAuth();
   const router = useRouter();
-  
-  // Redirect if already authenticated
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/');
+  const { user, isLoading } = useAuth();
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    displayName: '',
+    timezone: 'America/New_York',
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'success' | 'disabled'>('idle');
+  const timezones = getCommonTimezones();
+
+  // Check system settings and redirect authenticated users
+  useEffect(() => {
+    const checkSystemStatus = async () => {
+      try {
+        const response = await fetch('/api/system/settings');
+        const settings = await response.json();
+        
+        if (!settings.registrationEnabled) {
+          setRegistrationStatus('disabled');
+        }
+      } catch (error) {
+        console.error('Failed to check system settings:', error);
+      }
+    };
+
+    if (!isLoading && user) {
+      if (user.role === 'PENDING') {
+        router.push('/pending');
+      } else if (user.isActive) {
+        router.push('/');
+      }
+    } else if (!isLoading) {
+      checkSystemStatus();
     }
-  }, [isAuthenticated, router]);
-  
-  const handleSubmit = async (e: FormEvent) => {
+  }, [user, isLoading, router]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = 'Please enter a valid email address';
+      }
+    }
+
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!formData.displayName.trim()) {
+      newErrors.displayName = 'Display name is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form
-    if (!username || !password || !confirmPassword || !displayName) {
-      setError('All fields are required');
+    if (!validateForm()) {
       return;
     }
-    
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-    
-    setIsLoading(true);
-    setError('');
-    
+
+    setIsSubmitting(true);
+    setErrors({});
+
     try {
-      const success = await register({
-        username,
-        password,
-        displayName,
-        timezone
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.username.trim(),
+          email: formData.email.trim() || null,
+          password: formData.password,
+          displayName: formData.displayName.trim(),
+          timezone: formData.timezone,
+        }),
       });
-      
-      if (success) {
-        // Add a small delay before redirecting to ensure the session is fully updated
-        // This is especially important in Edge Runtime environments
-        console.log('Registration successful, waiting for session to update before redirecting...');
-        
-        // Wait for session to be fully established
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Force a hard navigation instead of client-side navigation
-        // This ensures the page is fully reloaded with the new session
-        window.location.href = '/';
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setRegistrationStatus('success');
       } else {
-        setError('Username already exists. Please choose another one.');
+        setErrors({ submit: data.message || 'Registration failed' });
       }
-    } catch (err) {
-      setError('An error occurred during registration. Please try again.');
-      console.error('Registration error:', err);
+    } catch {
+      setErrors({ submit: 'An unexpected error occurred' });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-  
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh]">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Create Account</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Sign up for a new Brain Log account
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="p-3 text-sm text-red-500 bg-red-100 dark:bg-red-900/30 dark:text-red-300 rounded">
-              {error}
-            </div>
-          )}
-          
-          <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Display Name
-            </label>
-            <Input
-              id="displayName"
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="mt-1"
-              placeholder="Enter your name"
-              required
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Username
-            </label>
-            <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1"
-              placeholder="Choose a username"
-              required
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1"
-              placeholder="Create a password"
-              required
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Confirm Password
-            </label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1"
-              placeholder="Confirm your password"
-              required
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Timezone
-            </label>
-            <Select
-              value={timezone}
-              onValueChange={setTimezone}
-            >
-              <SelectTrigger id="timezone" className="mt-1">
-                <SelectValue placeholder="Select your timezone" />
-              </SelectTrigger>
-              <SelectContent>
-                {timezones.map((tz) => (
-                  <SelectItem key={tz.id} value={tz.id}>
-                    {tz.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-500 mt-1">
-              Your timezone is used to ensure daily logs are created for the correct day.
-            </p>
-          </div>
-          
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Creating Account...' : 'Create Account'}
-          </Button>
-          
-          <div className="text-center text-sm">
-            <p className="text-gray-600 dark:text-gray-400">
-              Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
-                Sign in here
-              </Link>
-            </p>
-          </div>
-        </form>
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear field-specific errors when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">Loading...</div>
       </div>
+    );
+  }
+
+  if (registrationStatus === 'disabled') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Registration Disabled</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <AlertDescription>
+                New user registration is currently disabled. Please contact the administrator if you need access.
+              </AlertDescription>
+            </Alert>
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => router.push('/login')}
+            >
+              Back to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (registrationStatus === 'success') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Registration Successful</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <AlertDescription>
+                Your registration has been submitted and is pending admin approval. 
+                You will receive an email notification once your account is approved.
+              </AlertDescription>
+            </Alert>
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => router.push('/login')}
+            >
+              Back to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Create Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {errors.submit && (
+              <Alert variant="destructive">
+                <AlertDescription>{errors.submit}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+                className={errors.email ? 'border-red-500' : ''}
+                placeholder="your.email@example.com"
+                required
+              />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                Your email will be used for login and admin notifications.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input
+                id="displayName"
+                name="displayName"
+                type="text"
+                value={formData.displayName}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+                className={errors.displayName ? 'border-red-500' : ''}
+                required
+              />
+              {errors.displayName && (
+                <p className="text-sm text-red-500">{errors.displayName}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                value={formData.username}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+                className={errors.username ? 'border-red-500' : ''}
+                placeholder="Choose a unique username"
+                required
+              />
+              {errors.username && (
+                <p className="text-sm text-red-500">{errors.username}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                You can login using either your username or email address.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+                className={errors.password ? 'border-red-500' : ''}
+              />
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+                className={errors.confirmPassword ? 'border-red-500' : ''}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="timezone">Timezone</Label>
+              <Select
+                value={formData.timezone}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, timezone: value }))}
+              >
+                <SelectTrigger id="timezone">
+                  <SelectValue placeholder="Select your timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timezones.map((tz) => (
+                    <SelectItem key={tz.id} value={tz.id}>
+                      {tz.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Your timezone is used to ensure daily logs are created for the correct day.
+              </p>
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
+            </Button>
+
+            <div className="text-center">
+              <Button
+                variant="link"
+                onClick={() => router.push('/login')}
+                disabled={isSubmitting}
+              >
+                Already have an account? Sign in
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

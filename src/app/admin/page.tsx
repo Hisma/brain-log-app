@@ -4,19 +4,29 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Users, UserCheck, UserX, ShieldCheck, Database, Trash2 } from 'lucide-react';
+import { Users, UserCheck, UserX, ShieldCheck, Database, Trash2, Settings, Save } from 'lucide-react';
 
 interface User {
   id: number;
   username: string;
+  email: string | null;
   displayName: string;
   role: string;
   isActive: boolean;
   createdAt: string;
   lastLoginAt: string | null;
   failedLoginAttempts: number;
+}
+
+interface SystemSettings {
+  registrationEnabled: boolean;
+  siteName: string;
+  adminEmail: string;
+  maxFailedLogins: number;
+  lockoutDurationMinutes: number;
 }
 
 export default function AdminPage() {
@@ -27,6 +37,15 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [actionLoading, setActionLoading] = useState<Record<number, string>>({});
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({
+    registrationEnabled: true,
+    siteName: 'Brain Log App',
+    adminEmail: 'admin@brainlogapp.com',
+    maxFailedLogins: 5,
+    lockoutDurationMinutes: 15
+  });
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Redirect to login if not authenticated or not admin
   React.useEffect(() => {
@@ -37,10 +56,11 @@ export default function AdminPage() {
     }
   }, [user, router]);
 
-  // Load users on component mount
+  // Load users and settings on component mount
   useEffect(() => {
     if (user?.role === 'ADMIN') {
       loadUsers();
+      loadSystemSettings();
     }
   }, [user]);
 
@@ -60,6 +80,49 @@ export default function AdminPage() {
       console.error(error);
     } finally {
       setLoadingUsers(false);
+    }
+  };
+
+  const loadSystemSettings = async () => {
+    try {
+      setLoadingSettings(true);
+      const response = await fetch('/api/system/settings');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setSystemSettings(data);
+      } else {
+        setMessage(`Error loading system settings: ${data.message}`);
+      }
+    } catch (error) {
+      setMessage('Failed to load system settings');
+      console.error(error);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const saveSystemSettings = async () => {
+    try {
+      setSavingSettings(true);
+      setMessage(null);
+      const response = await fetch('/api/system/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(systemSettings)
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setMessage('System settings saved successfully');
+      } else {
+        setMessage(`Error saving settings: ${data.message}`);
+      }
+    } catch (error) {
+      setMessage('Failed to save system settings');
+      console.error(error);
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -224,7 +287,7 @@ export default function AdminPage() {
                         )}
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        @{u.username} • Created: {new Date(u.createdAt).toLocaleDateString()}
+                        @{u.username}{u.email && ` • ${u.email}`} • Created: {new Date(u.createdAt).toLocaleDateString()}
                         {u.lastLoginAt && ` • Last login: ${new Date(u.lastLoginAt).toLocaleDateString()}`}
                       </p>
                     </div>
@@ -271,6 +334,90 @@ export default function AdminPage() {
                   </div>
                 ))
               )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* System Settings */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            System Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingSettings ? (
+            <div className="text-center py-4">Loading system settings...</div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Site Name</label>
+                  <Input
+                    value={systemSettings.siteName}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, siteName: e.target.value }))}
+                    placeholder="Brain Log App"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Admin Email</label>
+                  <Input
+                    type="email"
+                    value={systemSettings.adminEmail}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, adminEmail: e.target.value }))}
+                    placeholder="admin@brainlogapp.com"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Max Failed Logins</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={systemSettings.maxFailedLogins}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, maxFailedLogins: parseInt(e.target.value) || 5 }))}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Lockout Duration (minutes)</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="1440"
+                    value={systemSettings.lockoutDurationMinutes}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, lockoutDurationMinutes: parseInt(e.target.value) || 15 }))}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={systemSettings.registrationEnabled}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, registrationEnabled: e.target.checked }))}
+                    className="rounded"
+                  />
+                  <span className="text-sm font-medium">Enable User Registration</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  When disabled, new users cannot register and will need admin approval
+                </p>
+              </div>
+              
+              <Button
+                onClick={saveSystemSettings}
+                disabled={savingSettings}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {savingSettings ? 'Saving...' : 'Save Settings'}
+              </Button>
             </div>
           )}
         </CardContent>

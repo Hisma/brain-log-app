@@ -78,7 +78,7 @@ export default function LoginPage() {
           
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Username
+              Username or Email
             </label>
             <Input
               id="username"
@@ -86,7 +86,7 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="mt-1"
-              placeholder="Enter your username"
+              placeholder="Enter your username or email"
               required
             />
           </div>

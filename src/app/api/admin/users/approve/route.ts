@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '../../../../../../auth';
 import { sql } from '@/lib/neon';
 import { auditLog } from '@/lib/audit';
+import { queueEmail } from '@/lib/email/queue';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // Get the user to verify they exist and are pending
     const users = await sql`
-      SELECT id, username, "displayName", role 
+      SELECT id, username, "displayName", role, email 
       FROM "User" 
       WHERE id = ${userId}
       LIMIT 1
@@ -64,6 +65,24 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
+
+    // Send approval email notification if user has an email
+    if (user.email) {
+      try {
+        await queueEmail({
+          to: user.email,
+          subject: 'Your Brain Log App account has been approved!',
+          template: 'user-approved',
+          variables: {
+            username: user.username,
+            displayName: user.displayName,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to queue approval email:', emailError);
+        // Don't fail the approval if email fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

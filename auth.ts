@@ -13,7 +13,6 @@ type UserRole = "PENDING" | "USER" | "ADMIN";
  * This file contains Node.js dependencies and should only be used in API routes
  * The middleware uses auth.config.ts which is Edge Runtime compatible
  */
-// @ts-expect-error - NextAuth v5 beta has type issues
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
@@ -32,11 +31,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         const password = credentials.password as string;
         
         try {
-          // Get user with role and active status
+          // Get user with role and active status (search by username or email)
           const users = await sql`
             SELECT id, username, "passwordHash", "displayName", timezone, theme, role, "isActive", "failedLoginAttempts", "lockedUntil"
             FROM "User" 
-            WHERE username = ${username}
+            WHERE username = ${username} OR email = ${username}
           `;
           
           if (users.length === 0) {

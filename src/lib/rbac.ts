@@ -5,7 +5,8 @@ import { auditLog } from '@/lib/audit';
 export const ROLES = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
-  USER: 'USER'
+  USER: 'USER',
+  PENDING: 'PENDING'
 } as const;
 
 export const PERMISSIONS = {
@@ -59,6 +60,9 @@ export const ROLE_PERMISSIONS = {
   [ROLES.USER]: [
     PERMISSIONS.DATA_READ_OWN,
     PERMISSIONS.DATA_WRITE_OWN,
+  ],
+  [ROLES.PENDING]: [
+    // PENDING users have no permissions - they can't access any protected resources
   ],
 } as const;
 
@@ -167,6 +171,29 @@ export async function isSuperAdmin(userId: number): Promise<boolean> {
   return await hasRole(userId, ROLES.SUPER_ADMIN);
 }
 
+export async function isPending(userId: number): Promise<boolean> {
+  return await hasRole(userId, ROLES.PENDING);
+}
+
+export async function isActiveUser(userId: number): Promise<boolean> {
+  try {
+    const users = await sql`
+      SELECT role, "isActive" 
+      FROM "User" 
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+
+    if (users.length === 0) return false;
+    
+    const user = users[0];
+    return user.isActive && user.role !== ROLES.PENDING;
+  } catch (error) {
+    console.error('Error checking if user is active:', error);
+    return false;
+  }
+}
+
 // User management functions (these will be used in API routes, not middleware)
 export async function assignRole(
   adminUserId: number,
@@ -268,6 +295,8 @@ export function getRoleDisplayName(role: string): string {
       return 'Administrator';
     case ROLES.USER:
       return 'User';
+    case ROLES.PENDING:
+      return 'Pending Approval';
     default:
       return 'Unknown';
   }

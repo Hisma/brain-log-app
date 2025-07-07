@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
       SELECT 
         id, 
         username, 
+        email,
         "displayName", 
         role, 
         "isActive", 
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
       users: users.map(user => ({
         id: user.id,
         username: user.username,
+        email: user.email,
         displayName: user.displayName,
         role: user.role,
         isActive: user.isActive,
