@@ -6,6 +6,7 @@ import { neon } from '@neondatabase/serverless';
 
 // Check if DATABASE_URL is defined
 const DATABASE_URL = process.env.DATABASE_URL;
+
 if (typeof DATABASE_URL !== 'string') {
   throw new Error('DATABASE_URL environment variable is not defined');
 }

@@ -10,6 +10,7 @@ import { Settings, Save } from 'lucide-react';
 
 interface SystemSettings {
   registrationEnabled: boolean;
+  maintenanceMode: boolean;
   siteName: string;
   adminEmail: string;
   maxFailedLogins: number;
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({
     registrationEnabled: true,
+    maintenanceMode: false,
     siteName: 'Brain Log App',
     adminEmail: 'admin@brainlogapp.com',
     maxFailedLogins: 5,
@@ -185,20 +187,37 @@ export default function SettingsPage() {
               </div>
 
               <div className="border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">Registration Settings</h3>
-                <div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={systemSettings.registrationEnabled}
-                      onChange={(e) => setSystemSettings(prev => ({ ...prev, registrationEnabled: e.target.checked }))}
-                      className="rounded"
-                    />
-                    <span className="text-sm font-medium">Enable User Registration</span>
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1 ml-6">
-                    When disabled, new users cannot register and will need admin approval
-                  </p>
+                <h3 className="text-lg font-medium mb-4">System Control</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={systemSettings.maintenanceMode}
+                        onChange={(e) => setSystemSettings(prev => ({ ...prev, maintenanceMode: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm font-medium">Maintenance Mode</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1 ml-6">
+                      When enabled, only admins can access the application
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={systemSettings.registrationEnabled}
+                        onChange={(e) => setSystemSettings(prev => ({ ...prev, registrationEnabled: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm font-medium">Enable User Registration</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1 ml-6">
+                      When disabled, new users cannot register and will need admin approval
+                    </p>
+                  </div>
                 </div>
               </div>
               

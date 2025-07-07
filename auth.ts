@@ -23,7 +23,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: Record<string, unknown>, request?: any) {
+        console.log('🔐 Auth.js authorize function called');
+        console.log('🔐 Credentials received:', { username: credentials?.username, hasPassword: !!credentials?.password });
+        
         if (!credentials?.username || !credentials?.password) {
+          console.log('❌ Missing username or password');
           return null;
         }
         
@@ -31,6 +35,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         const password = credentials.password as string;
         
         try {
+          console.log('🔐 Starting database query for user:', username);
+          
           // Get user with role and active status (search by username or email)
           const users = await sql`
             SELECT id, username, "passwordHash", "displayName", timezone, theme, role, "isActive", "failedLoginAttempts", "lockedUntil"
@@ -38,8 +44,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             WHERE username = ${username} OR email = ${username}
           `;
           
+          console.log('🔐 Database query completed. Users found:', users.length);
+          
           if (users.length === 0) {
+            console.log('❌ User not found:', username);
             await auditLog({
+              userId: null, // Explicitly set to null for non-existent users
               action: "LOGIN_FAILED",
               resource: "AUTH",
               details: { username, reason: "user_not_found" },
@@ -66,9 +76,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           
           // Verify password
           const hash = user.passwordHash as string;
+          console.log('🔐 Starting password verification');
+          console.log('🔐 Hash format:', hash?.substring(0, 20) + '...');
+          
           const isValidPassword = await comparePasswords(password, hash);
+          console.log('🔐 Password verification result:', isValidPassword);
           
           if (!isValidPassword) {
+            console.log('❌ Invalid password for user:', username);
             // Increment failed login attempts
             const failedAttempts = (user.failedLoginAttempts || 0) + 1;
             const maxAttempts = 5; // Could be from SystemSettings
@@ -113,17 +128,32 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           });
           
           // Return user object for session
-          return {
+          const userObj = {
             id: String(user.id),
             name: user.displayName || "",
             email: user.username,
+            username: user.username,
             timezone: user.timezone || "America/New_York",
             theme: user.theme || "",
             role: user.role as UserRole,
             isActive: user.isActive as boolean,
           };
+          
+          console.log('✅ Authentication successful. Returning user:', {
+            id: userObj.id,
+            username: userObj.username,
+            role: userObj.role,
+            isActive: userObj.isActive
+          });
+          
+          return userObj;
         } catch (error) {
-          console.error("Authentication error:", error);
+          console.error("❌ Authentication error:", error);
+          console.error("❌ Error details:", {
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            name: error instanceof Error ? error.name : typeof error
+          });
           return null;
         }
       },

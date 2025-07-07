@@ -42,7 +42,7 @@ export default auth((req) => {
   if (pathname.startsWith('/admin')) {
     // Admin routes require ADMIN role
     if (!user || user.role !== 'ADMIN' || !user.isActive) {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/login', req.url));
     }
   } else if (pathname.startsWith('/api/admin')) {
     // Admin API routes require ADMIN role
@@ -55,10 +55,10 @@ export default auth((req) => {
   } else if (pathname === '/pending') {
     // Pending page is only for users with PENDING role
     if (!user || user.role !== 'PENDING') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/login', req.url));
     }
-  } else if (['/daily-log', '/weekly-reflection', '/insights', '/weekly-insights', '/profile'].some(path => pathname.startsWith(path))) {
-    // Protected user routes require authentication and active account
+  } else if (pathname === '/' || ['/daily-log', '/weekly-reflection', '/insights', '/weekly-insights', '/profile'].some(path => pathname.startsWith(path))) {
+    // Protected user routes (including dashboard) require authentication and active account
     if (!user || !user.isActive) {
       return NextResponse.redirect(new URL('/login', req.url));
     }

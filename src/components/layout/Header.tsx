@@ -72,6 +72,11 @@ export function Header() {
             <Link href="/weekly-insights" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">
               Weekly Insights
             </Link>
+            {user?.role === 'ADMIN' && (
+              <Link href="/admin" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium">
+                Admin
+              </Link>
+            )}
           </nav>
           
           <div className="flex items-center space-x-4">

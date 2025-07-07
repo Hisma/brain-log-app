@@ -3,7 +3,6 @@ import { auditLog } from '@/lib/audit';
 
 // Define role hierarchy and permissions
 export const ROLES = {
-  SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   USER: 'USER',
   PENDING: 'PENDING'
@@ -34,7 +33,7 @@ export const PERMISSIONS = {
 
 // Role-Permission mappings
 export const ROLE_PERMISSIONS = {
-  [ROLES.SUPER_ADMIN]: [
+  [ROLES.ADMIN]: [
     PERMISSIONS.USER_READ,
     PERMISSIONS.USER_CREATE,
     PERMISSIONS.USER_UPDATE,
@@ -43,16 +42,6 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.ROLE_ASSIGN,
     PERMISSIONS.ROLE_REVOKE,
     PERMISSIONS.SYSTEM_SETTINGS,
-    PERMISSIONS.AUDIT_LOG_READ,
-    PERMISSIONS.DATA_READ_ALL,
-    PERMISSIONS.DATA_WRITE_ALL,
-  ],
-  [ROLES.ADMIN]: [
-    PERMISSIONS.USER_READ,
-    PERMISSIONS.USER_CREATE,
-    PERMISSIONS.USER_UPDATE,
-    PERMISSIONS.ROLE_READ,
-    PERMISSIONS.ROLE_ASSIGN,
     PERMISSIONS.AUDIT_LOG_READ,
     PERMISSIONS.DATA_READ_ALL,
     PERMISSIONS.DATA_WRITE_ALL,
@@ -164,11 +153,7 @@ export async function hasRole(userId: number, role: string): Promise<boolean> {
 }
 
 export async function isAdmin(userId: number): Promise<boolean> {
-  return await hasRole(userId, ROLES.ADMIN) || await hasRole(userId, ROLES.SUPER_ADMIN);
-}
-
-export async function isSuperAdmin(userId: number): Promise<boolean> {
-  return await hasRole(userId, ROLES.SUPER_ADMIN);
+  return await hasRole(userId, ROLES.ADMIN);
 }
 
 export async function isPending(userId: number): Promise<boolean> {
@@ -209,13 +194,6 @@ export async function assignRole(
     throw new Error('Invalid role');
   }
 
-  // Super admin role can only be assigned by another super admin
-  if (role === ROLES.SUPER_ADMIN) {
-    const isSuperAdminUser = await isSuperAdmin(adminUserId);
-    if (!isSuperAdminUser) {
-      throw new Error('Only super admins can assign super admin role');
-    }
-  }
 
   // Update user role
   await sql`
@@ -289,8 +267,6 @@ export async function revokeRole(
 // Utility functions for UI
 export function getRoleDisplayName(role: string): string {
   switch (role) {
-    case ROLES.SUPER_ADMIN:
-      return 'Super Administrator';
     case ROLES.ADMIN:
       return 'Administrator';
     case ROLES.USER:

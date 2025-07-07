@@ -45,41 +45,35 @@ function generateSalt(): Uint8Array {
  * Returns a string in the format: PBKDF2:iterations:base64salt:base64hash
  */
 export async function hashPassword(password: string): Promise<string> {
-  try {
-    // Generate a random salt
-    const salt = generateSalt();
-    
-    // Import the password as a key
-    const passwordKey = await crypto.subtle.importKey(
-      'raw',
-      stringToBuffer(password),
-      { name: 'PBKDF2' },
-      false,
-      ['deriveBits']
-    );
-    
-    // Derive bits using PBKDF2
-    const keyBuffer = await crypto.subtle.deriveBits(
-      {
-        name: 'PBKDF2',
-        salt,
-        iterations: ITERATIONS,
-        hash: HASH_ALGORITHM
-      },
-      passwordKey,
-      KEY_LENGTH * 8 // bits
-    );
-    
-    // Convert to base64 strings
-    const saltBase64 = bufferToBase64(salt);
-    const hashBase64 = bufferToBase64(keyBuffer);
-    
-    // Return formatted hash string
-    return `${HASH_FORMAT}:${ITERATIONS}:${saltBase64}:${hashBase64}`;
-  } catch (error) {
-    console.error('Password hashing error:', error);
-    throw error;
-  }
+  // Generate a random salt
+  const salt = generateSalt();
+  
+  // Import the password as a key
+  const passwordKey = await crypto.subtle.importKey(
+    'raw',
+    stringToBuffer(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  );
+  
+  // Derive bits using PBKDF2
+  const keyBuffer = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: ITERATIONS,
+      hash: HASH_ALGORITHM
+    },
+    passwordKey,
+    KEY_LENGTH * 8 // bits
+  );
+  
+  // Convert salt and hash to base64
+  const saltBase64 = bufferToBase64(salt);
+  const hashBase64 = bufferToBase64(keyBuffer);
+  
+  return `${HASH_FORMAT}:${ITERATIONS}:${saltBase64}:${hashBase64}`;
 }
 
 /**
@@ -90,16 +84,22 @@ export async function comparePasswords(password: string, hashString: string): Pr
   try {
     // Check if this is a PBKDF2 hash
     if (!hashString.startsWith(HASH_FORMAT)) {
-      console.error('Invalid hash format, expected PBKDF2');
       return false;
     }
     
     // Parse the hash string
     const parts = hashString.split(':');
-    const iterationsStr = parts[1];
-    const saltBase64 = parts[2];
-    const hashBase64 = parts[3];
+    if (parts.length !== 4) {
+      return false;
+    }
+    
+    const [, iterationsStr, saltBase64, hashBase64] = parts;
     const iterations = parseInt(iterationsStr, 10);
+    
+    if (isNaN(iterations) || iterations <= 0) {
+      return false;
+    }
+    
     const salt = base64ToBuffer(saltBase64);
     
     // Import the password as a key
@@ -130,4 +130,35 @@ export async function comparePasswords(password: string, hashString: string): Pr
     console.error('Password comparison error:', error);
     return false;
   }
+}
+
+/**
+ * Generate a cryptographically secure random string
+ * Useful for generating tokens, session IDs, etc.
+ */
+export function generateSecureRandomString(length: number = 32): string {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return bufferToBase64(array).replace(/[+/=]/g, '').substring(0, length);
+}
+
+/**
+ * Generate a UUID v4 using crypto.randomUUID if available,
+ * otherwise falls back to a secure implementation
+ */
+export function generateUUID(): string {
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback implementation for environments without crypto.randomUUID
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  
+  // Set version (4) and variant bits
+  array[6] = (array[6] & 0x0f) | 0x40; // Version 4
+  array[8] = (array[8] & 0x3f) | 0x80; // Variant 10
+  
+  const hex = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}`;
 }

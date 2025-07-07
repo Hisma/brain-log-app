@@ -36,7 +36,7 @@ const navigation = [
   },
   {
     name: 'Email Queue',
-    href: '/admin/emails',
+    href: '/admin/email-queue',
     icon: Mail,
   },
 ];

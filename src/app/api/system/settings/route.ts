@@ -7,7 +7,7 @@ export async function GET() {
   try {
     // Get system settings
     const settings = await sql`
-      SELECT "registrationEnabled", "siteName", "adminEmail", "maxFailedLogins", "lockoutDurationMinutes"
+      SELECT "registrationEnabled", "maintenanceMode", "siteName", "adminEmail", "maxFailedLoginAttempts", "lockoutDurationMinutes"
       FROM "SystemSettings" 
       WHERE id = 'system'
     `;
@@ -16,6 +16,7 @@ export async function GET() {
       // Return default settings if none exist
       return NextResponse.json({
         registrationEnabled: true,
+        maintenanceMode: false,
         siteName: 'Brain Log App',
         adminEmail: 'admin@brainlogapp.com',
         maxFailedLogins: 5,
@@ -26,9 +27,10 @@ export async function GET() {
     const setting = settings[0];
     return NextResponse.json({
       registrationEnabled: setting.registrationEnabled,
+      maintenanceMode: setting.maintenanceMode,
       siteName: setting.siteName,
       adminEmail: setting.adminEmail,
-      maxFailedLogins: setting.maxFailedLogins,
+      maxFailedLogins: setting.maxFailedLoginAttempts,
       lockoutDurationMinutes: setting.lockoutDurationMinutes
     });
 
@@ -47,7 +49,8 @@ export async function POST(request: NextRequest) {
     const user = await requireAdmin();
     
     const { 
-      registrationEnabled, 
+      registrationEnabled,
+      maintenanceMode,
       siteName, 
       adminEmail, 
       maxFailedLogins, 
@@ -90,6 +93,7 @@ export async function POST(request: NextRequest) {
 
     const settingsData = {
       registrationEnabled: registrationEnabled ?? true,
+      maintenanceMode: maintenanceMode ?? false,
       siteName: siteName || 'Brain Log App',
       adminEmail: adminEmail || 'admin@brainlogapp.com',
       maxFailedLogins: maxFailedLogins ?? 5,
@@ -100,10 +104,11 @@ export async function POST(request: NextRequest) {
       // Create new settings record
       await sql`
         INSERT INTO "SystemSettings" (
-          id, "registrationEnabled", "siteName", "adminEmail", "maxFailedLogins", "lockoutDurationMinutes"
+          id, "registrationEnabled", "maintenanceMode", "siteName", "adminEmail", "maxFailedLoginAttempts", "lockoutDurationMinutes"
         ) VALUES (
           'system', 
-          ${settingsData.registrationEnabled}, 
+          ${settingsData.registrationEnabled},
+          ${settingsData.maintenanceMode},
           ${settingsData.siteName}, 
           ${settingsData.adminEmail}, 
           ${settingsData.maxFailedLogins}, 
@@ -116,9 +121,10 @@ export async function POST(request: NextRequest) {
         UPDATE "SystemSettings" 
         SET 
           "registrationEnabled" = ${settingsData.registrationEnabled},
+          "maintenanceMode" = ${settingsData.maintenanceMode},
           "siteName" = ${settingsData.siteName},
           "adminEmail" = ${settingsData.adminEmail},
-          "maxFailedLogins" = ${settingsData.maxFailedLogins},
+          "maxFailedLoginAttempts" = ${settingsData.maxFailedLogins},
           "lockoutDurationMinutes" = ${settingsData.lockoutDurationMinutes}
         WHERE id = 'system'
       `;

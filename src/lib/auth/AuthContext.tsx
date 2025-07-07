@@ -143,18 +143,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkInterval = 5 * 60 * 1000; // 5 minutes
     sessionTimeoutRef.current = setInterval(checkSessionStatus, checkInterval);
     
+    // Enhanced cleanup function with proper timer clearance
     return () => {
-      // Clean up event listeners and interval
+      // Clean up event listeners
       window.removeEventListener('mousemove', updateLastActivity);
       window.removeEventListener('keydown', updateLastActivity);
       window.removeEventListener('click', updateLastActivity);
       window.removeEventListener('scroll', updateLastActivity);
       
+      // Clear the interval with proper null check and reset
       if (sessionTimeoutRef.current) {
         clearInterval(sessionTimeoutRef.current);
+        sessionTimeoutRef.current = null;
       }
     };
   }, [session, sessionExpired, refreshSession]);
+
+  // Additional cleanup effect for component unmount
+  useEffect(() => {
+    return () => {
+      // Final cleanup when component unmounts
+      if (sessionTimeoutRef.current) {
+        clearInterval(sessionTimeoutRef.current);
+        sessionTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
@@ -281,7 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Ensure the ID is a number for our application's internal use
       id: typeof session.user.id === 'string' ? parseInt(session.user.id, 10) : session.user.id,
       displayName: session.user.name || '', // Map NextAuth's name to our displayName
-      username: session.user.email || '', // Map NextAuth's email to our username
+      username: (session.user as { username?: string }).username || '', // Use the actual username field
       timezone: (session.user as { timezone?: string }).timezone || 'America/New_York', // Default timezone if not provided
       theme: (session.user as { theme?: string }).theme,
       role: (session.user as { role?: 'PENDING' | 'USER' | 'ADMIN' }).role || 'USER',

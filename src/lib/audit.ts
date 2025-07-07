@@ -1,7 +1,7 @@
 import { sql } from '@/lib/neon';
 
 interface AuditLogParams {
-  userId?: number;
+  userId?: number | null;
   action: string;
   resource: string;
   details?: Record<string, unknown>;
@@ -43,8 +43,12 @@ interface AuditLogStats {
 
 export async function auditLog(params: AuditLogParams): Promise<void> {
   try {
+    // Generate a proper CUID for the id field
+    const id = crypto.randomUUID();
+    
     await sql`
       INSERT INTO "AuditLog" (
+        id,
         "userId", 
         action, 
         resource, 
@@ -54,6 +58,7 @@ export async function auditLog(params: AuditLogParams): Promise<void> {
         timestamp
       )
       VALUES (
+        ${id},
         ${params.userId || null},
         ${params.action},
         ${params.resource},

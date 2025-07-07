@@ -209,6 +209,7 @@ model WeeklyInsight {
 model SystemSettings {
   id                       String  @id @default("system")
   registrationEnabled      Boolean @default(true)
+  maintenanceMode          Boolean @default(false)
   requireEmailVerification Boolean @default(true)
   adminEmail              String  @default("admin@brainlogapp.com")
   siteName                String  @default("Brain Log App")
@@ -221,7 +222,7 @@ model SystemSettings {
 // Comprehensive audit logging
 model AuditLog {
   id        String   @id @default(cuid())
-  userId    Int
+  userId    Int?     // Make nullable for cases where user doesn't exist (failed logins, etc.)
   action    String   // "USER_REGISTERED", "USER_APPROVED", "USER_REJECTED", "ROLE_CHANGED", "LOGIN_FAILED", "ACCOUNT_LOCKED"
   resource  String   // "USER", "SYSTEM", "AUTH", "ADMIN"
   details   Json?    // Additional context and metadata
@@ -230,7 +231,7 @@ model AuditLog {
   timestamp DateTime @default(now())
   
   // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
   @@index([action])
