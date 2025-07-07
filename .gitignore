@@ -42,3 +42,7 @@ next-env.d.ts
 
 # vscode
 *.code-workspace
+
+# Security: Hide sensitive admin scripts and internal documentation
+scripts/
+docs/

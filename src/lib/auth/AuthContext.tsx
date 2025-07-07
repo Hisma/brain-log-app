@@ -183,7 +183,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log('Login result:', result);
       
-      if (result?.ok) {
+      // Check for authentication success - NextAuth returns ok: true even for failed auth
+      // but includes an error field when credentials are invalid
+      if (result?.ok && !result?.error) {
         console.log('Login successful, updating session...');
         
         // Force a session update after successful login
@@ -203,6 +205,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Still return true since the login itself was successful
           return true;
         }
+      }
+      
+      // Log the specific error for debugging
+      if (result?.error) {
+        console.log('Login failed with error:', result.error);
       }
       
       return false;

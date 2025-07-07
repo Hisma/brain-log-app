@@ -110,6 +110,8 @@ export default function LoginPage() {
     try {
       const success = await login(username, password);
       
+      console.log('Login attempt result:', success);
+      
       if (success) {
         toast.success('Login successful! Redirecting...');
         
@@ -124,6 +126,8 @@ export default function LoginPage() {
         // This ensures the page is fully reloaded with the new session
         window.location.href = '/';
       } else {
+        console.log('Login failed, checking lockout status...');
+        
         // Refresh lockout info after failed attempt
         if (username.trim()) {
           try {
@@ -147,23 +151,23 @@ export default function LoginPage() {
                 toast.error(msg);
               }
             } else {
-              const msg = 'Invalid username or password';
+              const msg = 'Invalid username or password.';
               toast.error(msg);
             }
           } catch (err) {
-            console.error('Login error:', err);
-            const msg = 'Invalid username or password';
+            console.error('Lockout check error:', err);
+            const msg = 'Invalid username or password.';
             toast.error(msg);
           }
         } else {
-          const msg = 'Invalid username or password';
+          const msg = 'Invalid username or password.';
           toast.error(msg);
         }
       }
     } catch (err) {
+      console.error('Login error:', err);
       const msg = 'An error occurred during login. Please try again.';
       toast.error(msg);
-      console.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }
